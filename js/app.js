@@ -129,6 +129,18 @@ function setPhoto(key) {
   if (!src) return;
   photoAfter.src  = src;
   photoBefore.src = src;
+
+  if (key === 'custom') {
+    // Match the figure's aspect ratio to the uploaded image's natural dimensions
+    const img = new Image();
+    img.onload = () => {
+      photoFigure.style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
+    };
+    img.src = src;
+  } else {
+    // Restore the default 3/2 ratio for the stock photos
+    photoFigure.style.aspectRatio = '';
+  }
 }
 
 // ── Event delegation: film sim grid ───────────────────────────────────────
