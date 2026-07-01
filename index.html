@@ -12,7 +12,7 @@
 
   <!--
     SVG grain filters — four variants for Size × Roughness combinations.
-    baseFrequency controls particle size: 0.45 = fine (~2px), 0.18 = coarse (~6px).
+    baseFrequency controls particle size: 0.45 = fine (~2px), 0.28 = coarse (~3-4px).
     feComponentTransfer scales the turbulence amplitude from [0,1] to a narrow
     band around 0.5 so the overlay blend stays subtle (real Fuji grain is never harsh).
       Weak:   slope 0.10–0.12, intercept 0.44–0.45  → ±5–6% swing
@@ -48,12 +48,12 @@
 
     <!-- Large + Weak: coarse-grain film, ISO 1600-equivalent, subtle chunky texture -->
     <filter id="grain-large-weak" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
-      <feTurbulence type="fractalNoise" baseFrequency="0.18" numOctaves="3" stitchTiles="stitch" result="noise"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.28" numOctaves="3" stitchTiles="stitch" result="noise"/>
       <feColorMatrix type="saturate" values="0" in="noise" result="mono"/>
       <feComponentTransfer in="mono" result="grain">
-        <feFuncR type="linear" slope="0.12" intercept="0.44"/>
-        <feFuncG type="linear" slope="0.12" intercept="0.44"/>
-        <feFuncB type="linear" slope="0.12" intercept="0.44"/>
+        <feFuncR type="linear" slope="0.10" intercept="0.45"/>
+        <feFuncG type="linear" slope="0.10" intercept="0.45"/>
+        <feFuncB type="linear" slope="0.10" intercept="0.45"/>
       </feComponentTransfer>
       <feBlend in="SourceGraphic" in2="grain" mode="overlay" result="blend"/>
       <feComposite in="blend" in2="SourceGraphic" operator="in"/>
@@ -61,12 +61,12 @@
 
     <!-- Large + Strong: coarse-grain film, pushed ISO, clearly visible grain structure -->
     <filter id="grain-large-strong" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
-      <feTurbulence type="fractalNoise" baseFrequency="0.18" numOctaves="3" stitchTiles="stitch" result="noise"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.28" numOctaves="3" stitchTiles="stitch" result="noise"/>
       <feColorMatrix type="saturate" values="0" in="noise" result="mono"/>
       <feComponentTransfer in="mono" result="grain">
-        <feFuncR type="linear" slope="0.24" intercept="0.38"/>
-        <feFuncG type="linear" slope="0.24" intercept="0.38"/>
-        <feFuncB type="linear" slope="0.24" intercept="0.38"/>
+        <feFuncR type="linear" slope="0.17" intercept="0.415"/>
+        <feFuncG type="linear" slope="0.17" intercept="0.415"/>
+        <feFuncB type="linear" slope="0.17" intercept="0.415"/>
       </feComponentTransfer>
       <feBlend in="SourceGraphic" in2="grain" mode="overlay" result="blend"/>
       <feComposite in="blend" in2="SourceGraphic" operator="in"/>
