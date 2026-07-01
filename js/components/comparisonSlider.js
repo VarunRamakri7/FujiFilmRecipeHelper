@@ -25,7 +25,7 @@ export function initComparisonSlider(figure) {
   }
 
   function pctFromClientX(clientX) {
-    const rect = figure.getBoundingClientRect();
+    const rect = overlay.getBoundingClientRect();
     return ((clientX - rect.left) / rect.width) * 100;
   }
 

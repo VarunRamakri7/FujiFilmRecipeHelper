@@ -5,6 +5,7 @@ import { initSensorSelector, getSensorGeneration, isSupported } from './componen
 import { initTooltips }       from './components/tooltip.js';
 import { buildFilter }        from './utils/buildFilter.js';
 import { initComparisonSlider } from './components/comparisonSlider.js';
+import { exportCard }          from './utils/exportCard.js';
 
 // ── State ──────────────────────────────────────────────────────────────────
 const PHOTOS = {
@@ -277,6 +278,12 @@ document.getElementById('btn-reset').addEventListener('click', () => {
   renderFilmSims();
   renderParameters();
   updatePreview();
+});
+
+// ── Export card ───────────────────────────────────────────────────────────
+document.getElementById('btn-export-card').addEventListener('click', () => {
+  const gen = SENSOR_GENERATIONS.find(g => g.id === state.sensorId);
+  exportCard(state.filmSimId, state.params, gen?.label ?? '');
 });
 
 // ── Theme toggle ──────────────────────────────────────────────────────────

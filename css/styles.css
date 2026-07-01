@@ -426,32 +426,37 @@ body {
   position: relative;
   overflow: hidden;
   aspect-ratio: 3/2;
-  background: var(--surface-1);
+  background: var(--preview-bg);
+  transition: background var(--t-theme);
 }
 .photo-img {
   position: absolute;
+  object-fit: contain;
+  display: block;
+}
+/* photo-after sits inside .photo-figure and needs the mat padding */
+.photo-after {
+  inset: var(--preview-pad);
+  width: calc(100% - var(--preview-pad) * 2);
+  height: calc(100% - var(--preview-pad) * 2);
+  z-index: 0;
+}
+/* photo-before sits inside .comparison-overlay which is already inset */
+.photo-before {
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  display: block;
+  z-index: 1;
 }
-.photo-before { z-index: 1; }
-.photo-after  { z-index: 0; }
 
 /* ─── Comparison overlay ─────────────────────────────────── */
 .comparison-overlay {
   position: absolute;
-  inset: 0;
+  inset: var(--preview-pad);
   z-index: 2;
 }
 .comparison-overlay[hidden] { display: none; }
 
-.photo-before {
-  position: absolute;
-  inset: 0;
-  clip-path: inset(0 50% 0 0);
-}
 .divider-handle {
   position: absolute;
   top: 0; bottom: 0;
@@ -499,12 +504,12 @@ body {
 /* ─── Custom upload empty state ──────────────────────────── */
 .custom-upload-prompt {
   position: absolute;
-  inset: 0;
+  inset: var(--preview-pad);
   z-index: 4;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--surface-1);
+  background: transparent;
 }
 .custom-upload-prompt[hidden] { display: none; }
 .custom-upload-btn {
@@ -614,6 +619,30 @@ body {
 .recipe-name-input:focus { border-color: var(--fuji-orange); }
 .recipe-actions { display: flex; gap: var(--sp-3); }
 .recipe-actions .btn-primary { flex: 1; justify-content: center; }
+
+.btn-export {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  width: 100%;
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-sm);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
+}
+.btn-export:hover {
+  background: var(--surface-2);
+  color: var(--text-primary);
+  border-color: var(--fuji-orange);
+}
 
 /* ─── Theme FAB ──────────────────────────────────────────── */
 .theme-fab {

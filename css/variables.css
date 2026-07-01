@@ -33,6 +33,9 @@
   --glass-blur:   16px;
   --glass-border: 1px solid var(--panel-border);
   --glass-shadow: 0 8px 32px var(--shadow-color);
+
+  /* ── Preview frame ───────────────────────────────────────── */
+  --preview-pad: 20px;
 }
 
 /* ── Dark theme (default) ────────────────────────────────── */
@@ -77,6 +80,9 @@
   /* Filmstrip */
   --filmstrip-bg:   #0a0908;
   --filmstrip-rail: rgba(255, 255, 255, 0.06);
+
+  /* Preview mat */
+  --preview-bg:     #1c1916;
 }
 
 /* ── Light theme ─────────────────────────────────────────── */
@@ -114,4 +120,7 @@
   /* Filmstrip */
   --filmstrip-bg:   #c8bfb0;
   --filmstrip-rail: rgba(0, 0, 0, 0.18);
+
+  /* Preview mat */
+  --preview-bg:     #d4cfc8;
 }
