@@ -592,14 +592,68 @@ body {
 .film-sim-card.is-active .card-short { color: var(--fuji-orange); }
 
 /* ─── Responsive ─────────────────────────────────────────── */
+
+/* ── Tablet / single-column ≤ 900px ────────────────────── */
 @media (max-width: 900px) {
   .app-layout {
     grid-template-columns: 1fr;
     padding: var(--sp-4);
+    gap: var(--sp-4);
   }
-  .film-sim-grid { grid-template-columns: repeat(4, 1fr); }
+
+  /*
+   * Unwrap .panel-preview so its children (.preview-area, .recipe-save)
+   * become direct grid items and can be ordered independently.
+   * Result: photo first → controls → recipe save.
+   */
+  .panel-preview  { display: contents; }
+  .preview-area   { order: -2; }
+  .panel-controls { order: -1; }
+  .recipe-save    { order:  1; }
+
+  /* More columns now that the grid spans the full viewport width */
+  .film-sim-grid { grid-template-columns: repeat(5, 1fr); }
 }
-@media (max-width: 540px) {
+
+/* ── Phone ≤ 600px ─────────────────────────────────────── */
+@media (max-width: 600px) {
+  .app-layout { padding: var(--sp-3); gap: var(--sp-3); }
+
+  .header-inner { padding: var(--sp-2) var(--sp-3); }
+
+  /* Tighten section header */
+  .section-label { padding: var(--sp-2) var(--sp-3); }
+
+  /* Tighter param rows — less vertical scroll distance */
+  .param-row { padding: var(--sp-2) var(--sp-3); }
+
+  /* 4 columns — each card has a comfortable minimum width */
+  .film-sim-grid { grid-template-columns: repeat(4, 1fr); }
+
+  /* Narrower film rails to give the photo more horizontal space */
+  .strip-rail { width: 12px; }
+
+  /* Let recipe action buttons fill available width */
+  .recipe-actions { flex-wrap: wrap; }
+  .recipe-actions .btn { flex: 1; justify-content: center; }
+
+  /* Compact modal padding on phones */
+  .modal-overlay { padding: var(--sp-3); }
+  .modal { padding: var(--sp-5); }
+  .modal-title { font-size: 22px; }
+}
+
+/* ── Small phone ≤ 390px ───────────────────────────────── */
+@media (max-width: 390px) {
+  .logo-brand { font-size: 19px; }
+  .logo-title { font-size: 14px; }
+
+  /* Smaller header buttons so logo + two buttons fit on one line */
+  .header-nav .btn { font-size: 11px; padding: var(--sp-1) var(--sp-2); }
+
+  /* 3 columns — cards are small but still scannable */
   .film-sim-grid { grid-template-columns: repeat(3, 1fr); }
-  .header-inner { padding: var(--sp-3) var(--sp-4); }
+
+  /* Slightly smaller option button text for 3-option rows (CCE, Grain) */
+  .param-option { font-size: 11px; }
 }

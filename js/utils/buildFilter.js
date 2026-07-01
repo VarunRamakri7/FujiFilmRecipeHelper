@@ -56,13 +56,10 @@ export function buildFilter(filmSim, params) {
   }
 
   // ── Grain → SVG filter appended after CSS filters ──────────────────────
-  // grain size only matters when roughness is not Off
   if (params.grainRoughness !== 'Off') {
-    const isStrong = params.grainRoughness === 'Strong';
-    const isLarge  = params.grainSize === 'Large';
-    // Strong+Large → grain-strong, else Strong → grain-strong, Weak+Large → grain-strong, Weak → grain-weak
-    const grainId = (isStrong || isLarge) ? 'grain-strong' : 'grain-weak';
-    parts.push(`url(#${grainId})`);
+    const size      = params.grainSize === 'Large' ? 'large' : 'small';
+    const roughness = params.grainRoughness === 'Strong' ? 'strong' : 'weak';
+    parts.push(`url(#grain-${size}-${roughness})`);
   }
 
   return parts.join(' ');

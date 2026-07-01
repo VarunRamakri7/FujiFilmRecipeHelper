@@ -31,21 +31,20 @@ function show(trigger) {
   el.style.maxWidth = `${ttW}px`;
   el.style.left     = `${Math.max(8, Math.min(left, window.innerWidth - ttW - 8))}px`;
 
-  // Temporarily make visible to measure height
-  el.style.opacity  = '0';
+  // Measure height off-screen to decide whether to flip above/below
+  el.style.visibility = 'hidden';
+  el.style.top        = '-9999px';
   el.classList.add('is-visible');
   const ttH = el.offsetHeight;
-  el.classList.remove('is-visible');
 
   if (rect.top < ttH + gap + 8) {
-    // Not enough room above — show below
     top = rect.bottom + gap;
   } else {
     top = rect.top - ttH - gap;
   }
 
-  el.style.top = `${top}px`;
-  el.classList.add('is-visible');
+  el.style.top        = `${top}px`;
+  el.style.visibility = '';
 }
 
 function hide(trigger) {
