@@ -40,6 +40,7 @@ const photoPicker       = document.getElementById('photo-picker');
 const photoFigure       = document.getElementById('photo-figure');
 const comparisonOverlay = document.getElementById('comparison-overlay');
 const toggleComparison  = document.getElementById('toggle-comparison');
+const btnReupload       = document.getElementById('btn-reupload');
 
 // ── Render: film sim cards ─────────────────────────────────────────────────
 function renderFilmSims() {
@@ -182,42 +183,65 @@ paramList.addEventListener('click', e => {
 });
 
 // ── Photo picker ──────────────────────────────────────────────────────────
-const customPhotoInput = document.getElementById('custom-photo-input');
+const customPhotoInput  = document.getElementById('custom-photo-input');
+const customUploadPrompt = document.getElementById('custom-upload-prompt');
+const btnTriggerUpload  = document.getElementById('btn-trigger-upload');
+
+function syncReuploadBtn() {
+  btnReupload.hidden = !(state.photo === 'custom' && customBlobUrl);
+}
+
+function showUploadPrompt(visible) {
+  customUploadPrompt.hidden = !visible;
+}
 
 photoPicker.addEventListener('click', e => {
   const btn = e.target.closest('.photo-type-btn');
   if (!btn) return;
 
-  if (btn.dataset.photo === 'custom') {
-    // Always open the file picker when clicking Custom —
-    // whether or not a custom photo is already loaded.
-    customPhotoInput.click();
-    return;
-  }
-
   photoPicker.querySelectorAll('.photo-type-btn').forEach(b => b.classList.remove('is-active'));
   btn.classList.add('is-active');
   state.photo = btn.dataset.photo;
-  setPhoto(state.photo);
+
+  if (btn.dataset.photo === 'custom') {
+    if (customBlobUrl) {
+      setPhoto('custom');
+      showUploadPrompt(false);
+    } else {
+      photoAfter.src  = '';
+      photoBefore.src = '';
+      photoFigure.style.aspectRatio = '';
+      showUploadPrompt(true);
+    }
+  } else {
+    showUploadPrompt(false);
+    setPhoto(state.photo);
+  }
+  syncReuploadBtn();
 });
+
+// Upload button inside the empty-state overlay
+btnTriggerUpload.addEventListener('click', () => customPhotoInput.click());
+
+// Reupload button in the preview footer
+btnReupload.addEventListener('click', () => customPhotoInput.click());
 
 customPhotoInput.addEventListener('change', () => {
   const file = customPhotoInput.files[0];
   if (!file) return;
 
-  // Revoke any previous blob URL to avoid memory leaks
-  if (customBlobUrl) {
-    URL.revokeObjectURL(customBlobUrl);
-  }
+  if (customBlobUrl) URL.revokeObjectURL(customBlobUrl);
   customBlobUrl = URL.createObjectURL(file);
 
-  // Mark Custom tab active
+  // Ensure Custom tab is active
   photoPicker.querySelectorAll('.photo-type-btn').forEach(b => b.classList.remove('is-active'));
   photoPicker.querySelector('[data-photo="custom"]').classList.add('is-active');
   state.photo = 'custom';
-  setPhoto('custom');
 
-  // Reset the input value so the same file can be re-selected if needed
+  showUploadPrompt(false);
+  setPhoto('custom');
+  syncReuploadBtn();
+
   customPhotoInput.value = '';
 });
 

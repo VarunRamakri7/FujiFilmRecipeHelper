@@ -329,7 +329,44 @@ body {
 .photo-before { z-index: 1; }
 .photo-after  { z-index: 0; }
 
-/* ─── Comparison overlay ─────────────────────────────────── */
+/* ─── Custom upload empty state ──────────────────────────── */
+.custom-upload-prompt {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--fuji-dark-mid);
+}
+.custom-upload-prompt[hidden] { display: none; }
+.custom-upload-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-5) var(--sp-6);
+  border: 1.5px dashed var(--fuji-mid);
+  border-radius: var(--r-lg);
+  color: var(--fuji-muted);
+  background: transparent;
+  transition: border-color var(--t-fast), color var(--t-fast), background var(--t-fast);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+.custom-upload-btn:hover {
+  border-color: var(--fuji-orange);
+  color: var(--fuji-cream);
+  background: var(--fuji-dark);
+}
+.custom-upload-btn svg {
+  width: 32px;
+  height: 32px;
+  opacity: 0.7;
+}
+
+
 .comparison-overlay {
   position: absolute;
   inset: 0;
@@ -433,10 +470,6 @@ body {
   font-size: 10px;
   opacity: 0.6;
 }
-.photo-type-btn--upload:not(.is-active) {
-  border-left: 1px dashed var(--fuji-mid);
-  color: var(--fuji-muted);
-}
 
 .preview-footer {
   display: flex;
@@ -487,7 +520,11 @@ body {
   font-size: 11px;
   color: var(--fuji-muted);
   font-style: italic;
+  margin-left: auto;
 }
+
+.btn-reupload { font-size: 12px; padding: var(--sp-1) var(--sp-3); }
+.btn-reupload[hidden] { display: none; }
 
 /* ─── Recipe save ────────────────────────────────────────── */
 .recipe-save {
