@@ -83,9 +83,18 @@ Takes the baseline filter string + each parameter value, merges deltas, returns 
 
 ## Grain Overlay
 
-Grain is rendered as SVG `<filter>` elements using `<feTurbulence>` + `<feColorMatrix>` defined inline in `index.html`, then referenced in the computed filter string:
-- `url(#grain-weak)` / `url(#grain-strong)` for Roughness
-- Small vs Large grain adjusts `baseFrequency` on the turbulence element
+Grain is rendered as four SVG `<filter>` elements using `<feTurbulence>` + `<feColorMatrix>` + `<feComponentTransfer>` defined inline in `index.html`. The `feComponentTransfer` compresses turbulence amplitude to a narrow band around 0.5 so the `overlay` blend stays subtle — real Fuji grain is never harsh.
+
+Four filter IDs cover every Roughness × Size combination:
+
+| ID | Size | Roughness | `baseFrequency` | Slope / Intercept |
+|---|---|---|---|---|
+| `grain-small-weak`  | Small | Weak   | 0.45 | 0.10 / 0.45 |
+| `grain-small-strong`| Small | Strong | 0.45 | 0.20 / 0.40 |
+| `grain-large-weak`  | Large | Weak   | 0.28 | 0.10 / 0.45 |
+| `grain-large-strong`| Large | Strong | 0.28 | 0.17 / 0.415 |
+
+`buildFilter.js` appends `url(#grain-<size>-<roughness>)` when Roughness ≠ Off.
 
 ## Accuracy Disclaimer
 

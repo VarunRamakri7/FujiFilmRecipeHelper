@@ -50,7 +50,8 @@ Defined in `js/data/sensorGenerations.js`:
 
 - **No pixel-perfect simulation** — the CSS filter preview is directionally accurate, not hardware-identical. The disclaimer shown in the UI reflects this.
 - **Progressive disclosure** — every parameter has a tooltip; complex parameters have a "learn more" expansion.
-- **Mobile-first layout** — controls stack vertically on small screens; comparison slider is touch-friendly.
+- **Responsive layout** — on screens ≤ 900px the preview photo appears above the controls. `.panel-preview` uses `display: contents` so its children can be individually ordered in the grid.
+- **Custom photo** — the Custom tab in the photo picker accepts user-uploaded images via `URL.createObjectURL`. The blob URL persists for the session; the figure's `aspect-ratio` is updated to match the uploaded image's natural dimensions.
 - **Accessibility** — all interactive controls have ARIA labels; sliders are keyboard-navigable.
 
 ## Agent Task Areas

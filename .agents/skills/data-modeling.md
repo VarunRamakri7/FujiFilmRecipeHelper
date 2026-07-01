@@ -89,7 +89,7 @@ Define and maintain the static JS data files that underpin film simulations, sen
 | `grainSize` | Grain Size | select | Small, Large | Small | xtrans-iv |
 | `colorChromeEffect` | Color Chrome Effect | select | Off, Weak, Strong | Off | xtrans-iv |
 | `colorChromeBlue` | Color Chrome Effect Blue | select | Off, Weak, Strong | Off | xtrans-iv |
-| `clarity` | Clarity | range | –5 to +5 | 0 | xtrans-v |
+| `clarity` | Clarity | range | –5 to +5 | 0 | xtrans-iv |
 
 ## Conventions
 
