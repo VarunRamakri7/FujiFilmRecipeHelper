@@ -577,6 +577,12 @@ body {
   font-family: var(--font-mono);
 }
 
+/* ─── Film sim card: info tooltip on hover ───────────────── */
+.film-sim-card .card-swatch { pointer-events: none; }
+
+/* Active sim card accent line */
+.film-sim-card.is-active .card-short { color: var(--fuji-orange); }
+
 /* ─── Responsive ─────────────────────────────────────────── */
 @media (max-width: 900px) {
   .app-layout {
