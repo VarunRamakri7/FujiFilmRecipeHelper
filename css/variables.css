@@ -1,10 +1,37 @@
 :root {
-  --fuji-black:  #1a1714;
-  --fuji-dark:   #2a2520;
-  --fuji-cream:  #f5f0e8;
-  --fuji-ivory:  #ede8dc;
-  --fuji-orange: #d4622a;
-  --fuji-silver: #9ba3a8;
-  --fuji-ink:    #1a1714;
-  --fuji-muted:  #6b6560;
+  /* Palette */
+  --fuji-black:     #1a1714;
+  --fuji-dark:      #2a2520;
+  --fuji-dark-mid:  #332e29;
+  --fuji-mid:       #3f3a34;
+  --fuji-cream:     #f5f0e8;
+  --fuji-ivory:     #ede8dc;
+  --fuji-warm-grey: #c8c0b4;
+  --fuji-muted:     #7a7268;
+  --fuji-orange:    #d4622a;
+  --fuji-orange-lt: #e8855a;
+  --fuji-silver:    #9ba3a8;
+
+  /* Typography */
+  --font-display: 'Bebas Neue', 'Arial Narrow', sans-serif;
+  --font-body:    'Inter', system-ui, sans-serif;
+  --font-mono:    'Space Mono', 'Courier New', monospace;
+
+  /* Spacing */
+  --sp-1:  4px;
+  --sp-2:  8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+
+  /* Radii */
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-lg: 12px;
+
+  /* Transitions */
+  --t-fast: 120ms ease;
+  --t-base: 200ms ease;
 }

@@ -4,14 +4,245 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Fuji Recipe Helper</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600&family=Space+Mono&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/variables.css">
   <link rel="stylesheet" href="css/styles.css">
+
+  <!-- SVG grain filters referenced by CSS filter strings in the preview -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+    <filter id="grain-weak" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch" result="noise"/>
+      <feColorMatrix type="saturate" values="0" in="noise" result="mono"/>
+      <feBlend in="SourceGraphic" in2="mono" mode="overlay" result="blend"/>
+      <feComposite in="blend" in2="SourceGraphic" operator="in"/>
+    </filter>
+    <filter id="grain-strong" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.80" numOctaves="4" stitchTiles="stitch" result="noise"/>
+      <feColorMatrix type="saturate" values="0" in="noise" result="mono"/>
+      <feBlend in="SourceGraphic" in2="mono" mode="overlay" result="blend"/>
+      <feComposite in="blend" in2="SourceGraphic" operator="in"/>
+    </filter>
+  </svg>
 </head>
 <body>
-  <header>
-    <h1>Fuji Recipe Helper</h1>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-brand">FUJI</span><span class="logo-title">Recipe Helper</span>
+      </div>
+      <nav class="header-nav" aria-label="App navigation">
+        <button class="btn btn-ghost" id="btn-sensor" aria-haspopup="dialog">
+          <span id="sensor-label">X-Trans V</span>
+          <svg width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+        </button>
+        <button class="btn btn-ghost" id="btn-my-recipes">My Recipes</button>
+      </nav>
+    </div>
   </header>
-  <main id="app"></main>
+
+  <main class="app-layout">
+
+    <!-- ── LEFT: controls ── -->
+    <aside class="panel-controls" aria-label="Recipe controls">
+
+      <section class="control-section">
+        <h2 class="section-label">Film Simulation</h2>
+        <!-- Phase 3 will render cards here via JS; these placeholders show the layout -->
+        <div class="film-sim-grid" id="film-sim-grid" role="radiogroup" aria-label="Choose a film simulation">
+          <button class="film-sim-card is-active" role="radio" aria-checked="true" data-id="provia">
+            <div class="card-swatch" style="--swatch:#4a7a9b"></div>
+            <span class="card-short">PROVIA</span>
+            <span class="card-name">Standard</span>
+          </button>
+          <button class="film-sim-card" role="radio" aria-checked="false" data-id="velvia">
+            <div class="card-swatch" style="--swatch:#2e7d32"></div>
+            <span class="card-short">VELVIA</span>
+            <span class="card-name">Vivid</span>
+          </button>
+          <button class="film-sim-card" role="radio" aria-checked="false" data-id="astia">
+            <div class="card-swatch" style="--swatch:#b5838d"></div>
+            <span class="card-short">ASTIA</span>
+            <span class="card-name">Soft</span>
+          </button>
+          <button class="film-sim-card" role="radio" aria-checked="false" data-id="classic-chrome">
+            <div class="card-swatch" style="--swatch:#7a8a96"></div>
+            <span class="card-short">CCHROME</span>
+            <span class="card-name">Classic</span>
+          </button>
+          <button class="film-sim-card" role="radio" aria-checked="false" data-id="eterna">
+            <div class="card-swatch" style="--swatch:#4a5568"></div>
+            <span class="card-short">ETERNA</span>
+            <span class="card-name">Cinema</span>
+          </button>
+          <button class="film-sim-card" role="radio" aria-checked="false" data-id="classic-neg">
+            <div class="card-swatch" style="--swatch:#5a6e5a"></div>
+            <span class="card-short">CLASSIC N</span>
+            <span class="card-name">Neg</span>
+          </button>
+          <button class="film-sim-card" role="radio" aria-checked="false" data-id="acros">
+            <div class="card-swatch" style="--swatch:#555"></div>
+            <span class="card-short">ACROS</span>
+            <span class="card-name">B&amp;W</span>
+          </button>
+          <button class="film-sim-card is-gated" role="radio" aria-checked="false" data-id="reala-ace"
+                  data-tooltip="Not available on your sensor">
+            <div class="card-swatch" style="--swatch:#6b8cba"></div>
+            <span class="card-short">R.ACE</span>
+            <span class="card-name">Reala</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="control-section">
+        <h2 class="section-label">Parameters</h2>
+        <!-- Phase 4 will render parameters here via JS; these placeholders show the layout -->
+        <div class="parameter-list" id="parameter-list">
+
+          <div class="param-row" data-id="highlightTone">
+            <div class="param-header">
+              <label class="param-label" for="p-highlightTone">Highlight Tone</label>
+              <button class="param-info" aria-label="About Highlight Tone"
+                      data-tooltip="Controls how bright areas are rendered. Negative = softer rolloff, less blown highlights. Positive = harder, punchier highlights.">i</button>
+              <span class="param-value" aria-live="polite">0</span>
+            </div>
+            <input class="param-slider" type="range" id="p-highlightTone"
+                   min="-2" max="4" value="0" step="1"
+                   aria-label="Highlight Tone" aria-valuemin="-2" aria-valuemax="4" aria-valuenow="0">
+            <div class="param-ticks" aria-hidden="true">
+              <span>-2</span><span>0</span><span>+4</span>
+            </div>
+          </div>
+
+          <div class="param-row" data-id="shadowTone">
+            <div class="param-header">
+              <label class="param-label" for="p-shadowTone">Shadow Tone</label>
+              <button class="param-info" aria-label="About Shadow Tone"
+                      data-tooltip="Controls how dark areas are rendered. Negative = lifted, open shadows. Positive = deeper, moodier shadows.">i</button>
+              <span class="param-value" aria-live="polite">0</span>
+            </div>
+            <input class="param-slider" type="range" id="p-shadowTone"
+                   min="-2" max="4" value="0" step="1"
+                   aria-label="Shadow Tone" aria-valuemin="-2" aria-valuemax="4" aria-valuenow="0">
+            <div class="param-ticks" aria-hidden="true">
+              <span>-2</span><span>0</span><span>+4</span>
+            </div>
+          </div>
+
+          <div class="param-row" data-id="color">
+            <div class="param-header">
+              <label class="param-label" for="p-color">Color</label>
+              <button class="param-info" aria-label="About Color"
+                      data-tooltip="Global saturation adjustment on top of the simulation. Negative = muted and faded. Positive = vivid and intense.">i</button>
+              <span class="param-value" aria-live="polite">0</span>
+            </div>
+            <input class="param-slider" type="range" id="p-color"
+                   min="-4" max="4" value="0" step="1"
+                   aria-label="Color" aria-valuemin="-4" aria-valuemax="4" aria-valuenow="0">
+            <div class="param-ticks" aria-hidden="true">
+              <span>-4</span><span>0</span><span>+4</span>
+            </div>
+          </div>
+
+          <div class="param-row" data-id="grainRoughness">
+            <div class="param-header">
+              <span class="param-label">Grain Effect</span>
+              <button class="param-info" aria-label="About Grain Effect"
+                      data-tooltip="Adds simulated film grain. Weak is subtle; Strong is more visible and dramatic.">i</button>
+            </div>
+            <div class="param-options" role="group" aria-label="Grain Effect">
+              <button class="param-option is-active" data-value="Off">Off</button>
+              <button class="param-option" data-value="Weak">Weak</button>
+              <button class="param-option" data-value="Strong">Strong</button>
+            </div>
+          </div>
+
+          <div class="param-row is-gated" data-id="clarity"
+               data-tooltip="Not available on your sensor">
+            <div class="param-header">
+              <label class="param-label" for="p-clarity">Clarity</label>
+              <button class="param-info" aria-label="About Clarity"
+                      data-tooltip="Adjusts mid-tone contrast ('definition'). Positive = crisper, more three-dimensional. Negative = softer and smoother.">i</button>
+              <span class="param-value" aria-live="polite">0</span>
+            </div>
+            <input class="param-slider" type="range" id="p-clarity"
+                   min="-5" max="5" value="0" step="1" disabled
+                   aria-label="Clarity" aria-valuemin="-5" aria-valuemax="5" aria-valuenow="0">
+            <div class="param-ticks" aria-hidden="true">
+              <span>-5</span><span>0</span><span>+5</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </aside>
+
+    <!-- ── RIGHT: preview + save ── -->
+    <section class="panel-preview" aria-label="Recipe preview">
+
+      <div class="preview-area">
+
+        <div class="photo-picker" id="photo-picker" role="group" aria-label="Choose a test photo">
+          <button class="photo-type-btn is-active" data-photo="portrait">Portrait</button>
+          <button class="photo-type-btn" data-photo="landscape">Landscape</button>
+          <button class="photo-type-btn" data-photo="street">Street</button>
+        </div>
+
+        <div class="filmstrip-frame">
+          <div class="strip-rail" aria-hidden="true"></div>
+          <figure class="photo-figure" id="photo-figure">
+            <img class="photo-img photo-after" id="photo-after" src="" alt="Photo with recipe applied">
+            <div class="comparison-overlay" id="comparison-overlay" hidden aria-hidden="true">
+              <img class="photo-img photo-before" id="photo-before" src="" alt="Original photo">
+              <div class="divider-handle" id="divider-handle" role="slider"
+                   aria-label="Before/after comparison" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+                <div class="divider-line"></div>
+                <div class="divider-grip"></div>
+              </div>
+            </div>
+          </figure>
+          <div class="strip-rail" aria-hidden="true"></div>
+        </div>
+
+        <div class="preview-footer">
+          <label class="comparison-toggle">
+            <input type="checkbox" id="toggle-comparison" role="switch">
+            <span class="toggle-track"></span>
+            <span class="toggle-text">Show original</span>
+          </label>
+          <p class="disclaimer">Approximate preview — actual results vary by camera</p>
+        </div>
+
+      </div>
+
+      <div class="recipe-save">
+        <input class="recipe-name-input" id="recipe-name" type="text"
+               placeholder="Recipe name…" aria-label="Recipe name" maxlength="64">
+        <div class="recipe-actions">
+          <button class="btn btn-primary" id="btn-save">Save Recipe</button>
+          <button class="btn btn-ghost" id="btn-reset">Reset</button>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Sensor selector modal (Phase 3) -->
+  <div class="modal-overlay" id="sensor-modal" role="dialog" aria-modal="true"
+       aria-labelledby="sensor-modal-title" hidden>
+    <div class="modal">
+      <h2 class="modal-title" id="sensor-modal-title">Choose Your Camera</h2>
+      <p class="modal-subtitle">Select your X-Trans generation to see supported film simulations and parameters.</p>
+      <div class="sensor-list" id="sensor-list">
+        <!-- rendered by JS in Phase 3 -->
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
