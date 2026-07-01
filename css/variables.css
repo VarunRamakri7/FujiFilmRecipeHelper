@@ -74,6 +74,9 @@
   --fab-bg:         rgba(40, 35, 30, 0.85);
   --fab-border:     rgba(255, 255, 255, 0.10);
   --fab-color:      #b8b0a4;
+  /* Filmstrip */
+  --filmstrip-bg:   #0a0908;
+  --filmstrip-rail: rgba(255, 255, 255, 0.06);
 }
 
 /* ── Light theme ─────────────────────────────────────────── */
@@ -107,4 +110,8 @@
   --fab-bg:         rgba(255, 252, 247, 0.88);
   --fab-border:     rgba(0, 0, 0, 0.10);
   --fab-color:      #4a4540;
+
+  /* Filmstrip */
+  --filmstrip-bg:   #c8bfb0;
+  --filmstrip-rail: rgba(0, 0, 0, 0.18);
 }
