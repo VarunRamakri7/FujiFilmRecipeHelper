@@ -13,7 +13,7 @@ A web-based tool for Fujifilm X-series photographers to build, preview, and save
 
 ## Usage
 
-Open [`index.html`](index.html) in any modern browser. No server, no dependencies, no installation.
+Open the [webpage](https://varunramakri7.github.io/FujiFilmRecipeHelper/) in any modern browser. No server, no dependencies, no installation.
 
 ## Camera support
 
