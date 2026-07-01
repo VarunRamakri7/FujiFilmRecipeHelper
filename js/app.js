@@ -122,8 +122,11 @@ function updatePreview() {
 }
 
 // ── Set photo ─────────────────────────────────────────────────────────────
+let customBlobUrl = null;
+
 function setPhoto(key) {
-  const src = PHOTOS[key];
+  const src = key === 'custom' ? customBlobUrl : PHOTOS[key];
+  if (!src) return;
   photoAfter.src  = src;
   photoBefore.src = src;
 }
@@ -167,13 +170,43 @@ paramList.addEventListener('click', e => {
 });
 
 // ── Photo picker ──────────────────────────────────────────────────────────
+const customPhotoInput = document.getElementById('custom-photo-input');
+
 photoPicker.addEventListener('click', e => {
   const btn = e.target.closest('.photo-type-btn');
   if (!btn) return;
+
+  if (btn.dataset.photo === 'custom') {
+    // Always open the file picker when clicking Custom —
+    // whether or not a custom photo is already loaded.
+    customPhotoInput.click();
+    return;
+  }
+
   photoPicker.querySelectorAll('.photo-type-btn').forEach(b => b.classList.remove('is-active'));
   btn.classList.add('is-active');
   state.photo = btn.dataset.photo;
   setPhoto(state.photo);
+});
+
+customPhotoInput.addEventListener('change', () => {
+  const file = customPhotoInput.files[0];
+  if (!file) return;
+
+  // Revoke any previous blob URL to avoid memory leaks
+  if (customBlobUrl) {
+    URL.revokeObjectURL(customBlobUrl);
+  }
+  customBlobUrl = URL.createObjectURL(file);
+
+  // Mark Custom tab active
+  photoPicker.querySelectorAll('.photo-type-btn').forEach(b => b.classList.remove('is-active'));
+  photoPicker.querySelector('[data-photo="custom"]').classList.add('is-active');
+  state.photo = 'custom';
+  setPhoto('custom');
+
+  // Reset the input value so the same file can be re-selected if needed
+  customPhotoInput.value = '';
 });
 
 // ── Sensor change callback ────────────────────────────────────────────────

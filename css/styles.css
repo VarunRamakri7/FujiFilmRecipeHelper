@@ -427,6 +427,17 @@ body {
   font-weight: 600;
 }
 
+/* Custom upload tab */
+.photo-type-btn--upload::after {
+  content: ' ↑';
+  font-size: 10px;
+  opacity: 0.6;
+}
+.photo-type-btn--upload:not(.is-active) {
+  border-left: 1px dashed var(--fuji-mid);
+  color: var(--fuji-muted);
+}
+
 .preview-footer {
   display: flex;
   align-items: center;
