@@ -279,6 +279,28 @@ document.getElementById('btn-reset').addEventListener('click', () => {
   updatePreview();
 });
 
+// ── Theme toggle ──────────────────────────────────────────────────────────
+const THEME_KEY = 'fuji-theme';
+const htmlEl    = document.documentElement;
+
+function applyTheme(theme) {
+  htmlEl.setAttribute('data-theme', theme);
+  localStorage.setItem(THEME_KEY, theme);
+}
+
+document.getElementById('btn-theme').addEventListener('click', () => {
+  const next = htmlEl.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+});
+
+// Restore saved theme, fall back to OS preference
+const savedTheme = localStorage.getItem(THEME_KEY);
+if (savedTheme) {
+  applyTheme(savedTheme);
+} else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+  applyTheme('light');
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────
 initTooltips();
 initSensorSelector(onSensorChange);
