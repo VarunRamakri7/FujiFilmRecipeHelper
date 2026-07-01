@@ -242,12 +242,17 @@ body {
   border: 2px solid var(--fuji-dark);
 }
 .param-ticks {
+  position: relative;
   display: flex;
   justify-content: space-between;
   font-family: var(--font-mono);
   font-size: 9px;
   color: var(--fuji-muted);
   padding: 0 2px;
+}
+.param-ticks .tick-zero {
+  position: absolute;
+  transform: translateX(-50%);
 }
 
 /* Select-style option buttons */

@@ -4,6 +4,7 @@ import { SENSOR_GENERATIONS } from './data/sensorGenerations.js';
 import { initSensorSelector, getSensorGeneration, isSupported } from './components/sensorSelector.js';
 import { initTooltips }       from './components/tooltip.js';
 import { buildFilter }        from './utils/buildFilter.js';
+import { initComparisonSlider } from './components/comparisonSlider.js';
 
 // ── State ──────────────────────────────────────────────────────────────────
 const PHOTOS = {
@@ -31,11 +32,14 @@ const state = {
 };
 
 // ── DOM refs ───────────────────────────────────────────────────────────────
-const filmSimGrid  = document.getElementById('film-sim-grid');
-const paramList    = document.getElementById('parameter-list');
-const photoAfter   = document.getElementById('photo-after');
-const photoBefore  = document.getElementById('photo-before');
-const photoPicker  = document.getElementById('photo-picker');
+const filmSimGrid       = document.getElementById('film-sim-grid');
+const paramList         = document.getElementById('parameter-list');
+const photoAfter        = document.getElementById('photo-after');
+const photoBefore       = document.getElementById('photo-before');
+const photoPicker       = document.getElementById('photo-picker');
+const photoFigure       = document.getElementById('photo-figure');
+const comparisonOverlay = document.getElementById('comparison-overlay');
+const toggleComparison  = document.getElementById('toggle-comparison');
 
 // ── Render: film sim cards ─────────────────────────────────────────────────
 function renderFilmSims() {
@@ -104,7 +108,7 @@ function renderParameters() {
                ${gated ? 'disabled' : ''}
                aria-label="${param.label}" aria-valuemin="${min}" aria-valuemax="${max}" aria-valuenow="${val}">
         <div class="param-ticks" aria-hidden="true">
-          <span>${min}</span><span>0</span><span>+${max}</span>
+          <span>${min}</span><span class="tick-zero" style="left:${((-min / (max - min)) * 100).toFixed(2)}%">0</span><span>+${max}</span>
         </div>
       </div>`;
   }).join('');
@@ -184,6 +188,18 @@ function onSensorChange(newId) {
   renderParameters();
   updatePreview();
 }
+
+// ── Comparison toggle ─────────────────────────────────────────────────────
+let sliderInitialized = false;
+toggleComparison.addEventListener('change', () => {
+  const on = toggleComparison.checked;
+  comparisonOverlay.hidden = !on;
+  comparisonOverlay.setAttribute('aria-hidden', String(!on));
+  if (on && !sliderInitialized) {
+    initComparisonSlider(photoFigure);
+    sliderInitialized = true;
+  }
+});
 
 // ── Reset ─────────────────────────────────────────────────────────────────
 document.getElementById('btn-reset').addEventListener('click', () => {
