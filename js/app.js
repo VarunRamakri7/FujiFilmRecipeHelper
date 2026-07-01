@@ -108,7 +108,7 @@ function renderParameters() {
                ${gated ? 'disabled' : ''}
                aria-label="${param.label}" aria-valuemin="${min}" aria-valuemax="${max}" aria-valuenow="${val}">
         <div class="param-ticks" aria-hidden="true">
-          <span>${min}</span><span class="tick-zero" style="left:${((-min / (max - min)) * 100).toFixed(2)}%">0</span><span>+${max}</span>
+          <span>${min}</span><span class="tick-zero" style="--zero-pct:${(-min / (max - min)).toFixed(4)}">0</span><span>+${max}</span>
         </div>
       </div>`;
   }).join('');

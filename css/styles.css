@@ -253,6 +253,9 @@ body {
 .param-ticks .tick-zero {
   position: absolute;
   transform: translateX(-50%);
+  /* Correct for the 8px thumb half-width inset on each side of the slider track */
+  --thumb-half: 8px;
+  left: calc(var(--zero-pct) * (100% - 2 * var(--thumb-half)) + var(--thumb-half));
 }
 
 /* Select-style option buttons */
