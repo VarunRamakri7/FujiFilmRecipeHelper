@@ -1,7 +1,7 @@
 # Skill: Recipe Management
 
 ## Purpose
-Handle all recipe persistence — saving, loading, deleting, and exporting recipes — using localStorage. No backend in v1.
+Handle all recipe persistence — saving, loading, deleting, and exporting recipes — using localStorage, plus the canvas-based recipe card image export. No backend in v1.
 
 ## Storage Schema
 
@@ -32,10 +32,11 @@ localStorage.setItem('fuji-recipes', JSON.stringify(recipes))
     color: 2,
     sharpness: 0,
     noiseReduction: -2,
-    grainEffect: 'Weak',
-    grainSize: 'Fine',
+    grainRoughness: 'Weak',
+    grainSize: 'Small',
     colorChromeEffect: 'Strong',
     colorChromeBlue: 'Off',
+    clarity: 0,
   }
 }
 ```
@@ -57,6 +58,16 @@ Each mutating function reads, modifies, and writes the full array atomically (no
 ## Export Format
 
 `exportRecipe` serializes a single recipe to a `.json` file and triggers a browser download via a temporary `<a href="blob:...">` element. The exported JSON matches the recipe object shape exactly.
+
+## Recipe Card Image Export (`js/utils/exportCard.js`)
+
+`exportCard(filmSimId, params, sensorLabel)` renders a recipe summary as a downloadable PNG using the HTML Canvas API (no external libraries).
+
+- Card size: 640×820px
+- Theme-aware: reads `document.documentElement.getAttribute('data-theme')` — applies dark (deep charcoal) or light (warm ivory) palette matching `css/variables.css`
+- Content: accent bar in the sim's `accentColor`, sim name in Bebas Neue display font, `inspiredBy` line, full parameter table with mini dot-track indicators for range params; non-default values highlighted in accent color, zero/Off values in muted color
+- Download: `canvas.toBlob()` → `<a download>` click → `<filmSimId>-recipe.png`
+- Called from `app.js` via the "Export Card" button with current `state.filmSimId`, `state.params`, and the active sensor generation's label
 
 ## Recipe ID Generation
 

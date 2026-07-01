@@ -20,7 +20,8 @@ Build and maintain the HTML/CSS UI elements for the recipe builder interface. Al
 | Comparison Slider | `js/components/comparisonSlider.js` | Draggable before/after divider on the preview photo |
 | Tooltip | `js/components/tooltip.js` | Hover tooltip positioning and show/hide logic |
 | Sensor Selector | `js/components/sensorSelector.js` | First-load modal + header button for sensor generation |
-| App wiring | `js/app.js` | Renders film sim cards, parameter sliders, photo picker, recipe save/load UI |
+| Export Card | `js/utils/exportCard.js` | Canvas-drawn recipe card PNG download |
+| App wiring | `js/app.js` | Renders film sim cards, parameter sliders, photo picker, recipe save/load UI, export button |
 
 All other UI is static HTML in `index.html` styled via `css/styles.css`.
 
@@ -33,10 +34,17 @@ All other UI is static HTML in `index.html` styled via `css/styles.css`.
 - Single shared `.tooltip` element appended to `<body>` on init
 - **Important**: the height measurement pass uses `visibility: hidden` + `top: -9999px` — do NOT use `opacity: 0` as an inline style, as it overrides the `.is-visible { opacity: 1 }` CSS rule and keeps the tooltip permanently hidden
 
+### Framed Preview
+- The preview photo uses a **mat/frame layout**: `.photo-figure` has a solid `--preview-bg` background (dark charcoal or warm light gray, theme-aware) and `--preview-pad: 20px` padding on all sides.
+- `.photo-after` is `inset: var(--preview-pad)` with `object-fit: contain` — image is fully visible, centered, with equal whitespace on all four sides.
+- `--preview-bg` is defined per theme in `css/variables.css`: `#1c1916` (dark) / `#d4cfc8` (light).
+- The filmstrip frame around the figure (`--filmstrip-bg`) is a separate, darker/lighter color than the mat.
+
 ### Comparison Slider
-- `.comparison-overlay` is `position: absolute; inset: 0; z-index: 2` over `.photo-figure`
-- `.photo-before` (unfiltered, z-index 1) is clipped via `clip-path: inset(0 X% 0 0)`
-- `.photo-after` (filtered, z-index 0) fills the full figure underneath
+- `.comparison-overlay` is `position: absolute; inset: var(--preview-pad); z-index: 2` — it sits inside the mat, matching the image area exactly
+- `.photo-before` (unfiltered, z-index 1) is `inset: 0` within the overlay and clipped via `clip-path: inset(0 X% 0 0)`
+- `.photo-after` (filtered, z-index 0) is `inset: var(--preview-pad)` within `.photo-figure`, directly behind the overlay
+- **Important**: `pctFromClientX()` in `comparisonSlider.js` measures `overlay.getBoundingClientRect()` (NOT `figure`) — the divider position must be relative to the inset image area, not the outer figure including the mat
 - Handle position and clip-path are driven by `initComparisonSlider()` in JS
 - Initialized lazily — only on the first time `#toggle-comparison` is checked
 - Toggled by `#toggle-comparison` checkbox in `.preview-footer`
@@ -66,9 +74,22 @@ All other UI is static HTML in `index.html` styled via `css/styles.css`.
 - On `input` event, calls `buildFilter()` and updates the preview image's `style.filter`
 
 ### Responsive Layout
-- **≤ 900px**: Single column. `.panel-preview` is set to `display: contents` so its children (`.preview-area`, `.recipe-save`) become direct grid items. CSS `order` places `.preview-area` first (order: -2), then `.panel-controls` (order: -1), then `.recipe-save` (order: 1).
-- **≤ 600px**: Tighter spacing, 4-column film sim grid, narrower filmstrip rails (12px).
+- **≤ 1100px**: Two columns (film sim + preview only, params panel moves under).
+- **≤ 760px**: Single column. `.panel-preview` is set to `display: contents` so its children (`.preview-area`, `.recipe-save`) become direct grid items. CSS `order` places `.preview-area` first (order: -2), then `.panel-controls` (order: -1), then `.recipe-save` (order: 1).
+- **≤ 540px**: Tighter spacing, 4-column film sim grid, narrower filmstrip rails.
 - **≤ 390px**: Compact header, 3-column film sim grid.
+
+### Dark/Light Theme
+- Switched via `data-theme` attribute on `<html>` (`"dark"` or `"light"`).
+- A floating action button (`.theme-fab`) in the bottom-right toggles the theme and persists it to `localStorage` under key `fuji-theme`.
+- On load, `app.js` reads the saved theme; falls back to OS `prefers-color-scheme`.
+- Theme-specific CSS vars are defined in `css/variables.css` under `[data-theme="dark"]` and `[data-theme="light"]`.
+- **All theme-sensitive colors must use CSS custom properties** — never hard-code light/dark values in `styles.css`.
+
+### Export Card Button
+- `.btn-export` lives inside `.recipe-save`, below the Save/Reset row.
+- Styled as a full-width subtle surface button with an orange border accent on hover.
+- Wired in `app.js` to call `exportCard(state.filmSimId, state.params, sensorLabel)` from `js/utils/exportCard.js`.
 
 ## Accessibility Checklist
 - All range inputs: `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, `aria-label`
