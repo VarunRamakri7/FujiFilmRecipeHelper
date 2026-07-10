@@ -6,7 +6,8 @@ import { initTooltips }       from './components/tooltip.js';
 import { buildFilter }        from './utils/buildFilter.js';
 import { initComparisonSlider } from './components/comparisonSlider.js';
 import { exportCard }          from './utils/exportCard.js';
-import { saveRecipe }          from './utils/recipes.js';
+import { saveRecipe }    from './utils/recipes.js';
+import { initMagnifier } from './components/zoomLens.js';
 
 // ── State ──────────────────────────────────────────────────────────────────
 const PHOTOS = {
@@ -267,7 +268,6 @@ function handleParamClick(e) {
   const id  = btn.dataset.param;
   const val = btn.dataset.value;
   state.params[id] = val;
-  // Update active state in both lists
   [paramList, paramListMobile].forEach(list => {
     list?.querySelectorAll(`.param-option[data-param="${id}"]`).forEach(b => {
       b.classList.toggle('is-active', b.dataset.value === val);
@@ -428,3 +428,4 @@ setPhoto(state.photo);
 renderFilmSims();
 renderParameters();
 updatePreview();
+initMagnifier({ figure: photoFigure, after: photoAfter, before: photoBefore, overlay: comparisonOverlay });
