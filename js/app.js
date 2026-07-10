@@ -7,7 +7,7 @@ import { buildFilter }        from './utils/buildFilter.js';
 import { initComparisonSlider } from './components/comparisonSlider.js';
 import { exportCard }          from './utils/exportCard.js';
 import { saveRecipe }    from './utils/recipes.js';
-import { initMagnifier } from './components/zoomLens.js';
+import { initMagnifier, setMagnifierEnabled } from './components/zoomLens.js';
 
 // ── State ──────────────────────────────────────────────────────────────────
 const PHOTOS = {
@@ -355,6 +355,11 @@ function onSensorChange(newId) {
   renderParameters();
   updatePreview();
 }
+
+// ── Magnifier toggle ──────────────────────────────────────────────────────
+document.getElementById('toggle-magnifier').addEventListener('change', e => {
+  setMagnifierEnabled(e.target.checked);
+});
 
 // ── Comparison toggle ─────────────────────────────────────────────────────
 let sliderInitialized = false;

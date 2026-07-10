@@ -7,7 +7,16 @@ const SAMPLE_PX  = (LENS_R * 2) / ZOOM; // source region width/height in natural
 
 let figure, afterImg, beforeImg, overlay;
 let lens, lensCtx;
-let active = false;
+let active  = false;
+let enabled = false;
+
+export function setMagnifierEnabled(on) {
+  enabled = on;
+  if (!on) {
+    lens?.classList.remove('is-visible');
+    figure?.classList.remove('mag-active');
+  }
+}
 
 // ── Build the lens canvas ─────────────────────────────────────────────────
 function createLens() {
@@ -122,7 +131,7 @@ function overSlider(cx) {
 
 // ── Event handlers ────────────────────────────────────────────────────────
 function onMove(e) {
-  if (!active) return;
+  if (!active || !enabled) return;
   const { x, y, cx, cy } = pctFromEvent(e);
   if (overSlider(cx)) {
     lens.classList.remove('is-visible');
@@ -137,7 +146,7 @@ function onMove(e) {
 
 function onEnter() {
   active = true;
-  sizeLens();
+  if (enabled) sizeLens();
 }
 
 function onLeave() {
