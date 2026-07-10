@@ -111,11 +111,26 @@ function positionLens(cx, cy) {
   lens.style.top  = ly + 'px';
 }
 
+// ── Slider hit-test ───────────────────────────────────────────────────────
+function overSlider(cx) {
+  if (overlay.hidden) return false;
+  const handle = figure.querySelector('.divider-handle');
+  if (!handle) return false;
+  const r = handle.getBoundingClientRect();
+  return cx >= r.left && cx <= r.right;
+}
+
 // ── Event handlers ────────────────────────────────────────────────────────
 function onMove(e) {
   if (!active) return;
-  e.preventDefault();
   const { x, y, cx, cy } = pctFromEvent(e);
+  if (overSlider(cx)) {
+    lens.classList.remove('is-visible');
+    figure.classList.remove('mag-active');
+    return;
+  }
+  lens.classList.add('is-visible');
+  figure.classList.add('mag-active');
   positionLens(cx, cy);
   drawLens(x, y);
 }
@@ -123,8 +138,6 @@ function onMove(e) {
 function onEnter() {
   active = true;
   sizeLens();
-  lens.classList.add('is-visible');
-  figure.classList.add('mag-active');
 }
 
 function onLeave() {
