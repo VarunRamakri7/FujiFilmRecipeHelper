@@ -6,6 +6,7 @@ A web-based tool for Fujifilm X-series photographers to build, preview, and save
 
 - **Recipe builder** — pick a film simulation, dial in parameters (Highlight Tone, Shadow Tone, Color, Grain, Clarity, and more), and see a live approximate preview
 - **Before/after comparison** — toggle a draggable slider to reveal the original photo alongside the filtered result
+- **Hover magnifier** — enable a circular lens that follows your pointer and shows a 3× zoomed region; aware of the comparison slider (each side zooms its own source)
 - **Custom photo preview** — use one of three stock photos or upload your own image; uploaded photos persist for the session
 - **Sensor-aware** — select your X-Trans generation and the UI automatically shows only the film sims and parameters your camera supports
 - **Local recipe saving** — name and save recipes to your browser; export any recipe as a `.json` file
@@ -56,11 +57,11 @@ Sensor selection gates what the user can see: film simulations and parameters no
 
 - [`css/variables.css`](css/variables.css): All design tokens as CSS custom properties: the full color palette (`--fuji-black`, `--fuji-orange`, etc.), font stack references, spacing scale, border radii, and transition durations. Includes theme-aware tokens (`--preview-bg`, `--filmstrip-bg`, etc.) that switch between dark and light values via `[data-theme]`. Everything in `styles.css` references these tokens rather than hard-coded values.
 
-- [`css/styles.css`](css/styles.css): All layout and component styles. Covers the header, three-column app grid (film sim panel | preview | parameters panel), film simulation card grid, parameter sliders and option buttons, filmstrip frame, before/after comparison overlay, photo picker (including custom upload empty state), tooltip, sensor modal, recipe save panel, and responsive breakpoints at 1100px, 760px, 540px, and 390px. The preview photo sits inside a padded mat frame (`--preview-pad: 20px`) using `object-fit: contain` so the image is always fully visible with equal whitespace on all four sides. On screens 760px and below the preview photo is shown first, above the controls.
+- [`css/styles.css`](css/styles.css): All layout and component styles. The app uses a single full-viewport layout: the preview photo fills the available width (max 1200px, capped in height to stay clear of the navigation pill), with all controls accessed via a floating pill nav at the bottom center of the screen. Each pill item opens a bottom sheet that slides up from the bottom — Film Sim, Adjust (parameters), Recipe (save/export), and Options (comparison slider, magnifier). The preview photo sits inside a padded mat frame (`--preview-pad: 20px`) using `object-fit: contain`. Breakpoints at 540px and 390px handle small-phone tweaks only.
 
 ---
 
-- [`js/app.js`](js/app.js): Main entry point and application controller. Holds the single shared state object (active sensor, selected film sim, photo choice, all parameter values). On init it renders film sim cards and parameter controls from the data files, loads the first stock photo, and wires up all event listeners. On every interaction it updates state, re-renders where needed, and calls `buildFilter()` to refresh the preview. Handles the photo picker including the Custom tab: switching to Custom shows an empty state with an upload prompt when no image has been uploaded, or the previously uploaded image if one exists. The uploaded blob URL persists for the session; a reupload button appears in the preview footer whenever a custom image is active. The "Export Card" button wires to `exportCard()` with the current film sim, params, and sensor label.
+- [`js/app.js`](js/app.js): Main entry point and application controller. Holds the single shared state object (active sensor, selected film sim, photo choice, all parameter values). On init it renders film sim cards and parameter controls from the data files, loads the first stock photo, and wires up all event listeners. On every interaction it updates state, re-renders where needed, and calls `buildFilter()` to refresh the preview. Handles the photo picker including the Custom tab. Manages the floating pill nav and four bottom sheets (Film Sim, Parameters, Recipe, Options). The Options sheet hosts the comparison toggle and magnifier toggle. The "Export Card" button wires to `exportCard()` with the current film sim, params, and sensor label.
 
 ---
 
@@ -85,6 +86,8 @@ Sensor selection gates what the user can see: film simulations and parameters no
 - [`js/components/tooltip.js`](js/components/tooltip.js): Lightweight hover/focus tooltip system. Uses a single shared tooltip element appended to `<body>`. Listens for `mouseover`/`mouseout` and `focusin`/`focusout` on any element with a `data-tooltip` attribute. Positions the tooltip above the trigger by default, flipping below if there is insufficient space. Uses `visibility: hidden` for the height-measurement pass to avoid the inline `opacity` override bug that would keep tooltips invisible.
 
 - [`js/components/comparisonSlider.js`](js/components/comparisonSlider.js): Draggable before/after divider overlaid on the preview photo. Handles `mousedown`/`mousemove`/`mouseup` and equivalent touch events. Moves the divider and clips the "before" image using a CSS `clip-path` percentage so the original and filtered halves are always visible side by side. Arrow key support on the handle (Shift+arrow for 10% jumps). Initialized lazily on the first time the comparison toggle is enabled. The divider position is computed relative to the `.comparison-overlay` element (not the outer figure) so it tracks correctly within the padded image area.
+
+- [`js/components/zoomLens.js`](js/components/zoomLens.js): Hover magnifier rendered on a `<canvas>` element appended to `.photo-figure`. When enabled via the Options sheet, the lens follows the pointer and draws a 3× zoomed crop of the image. In comparison mode it detects which half of the divider the pointer is in and samples the correct source image (`before` or `after`). The lens is suppressed when the pointer is over the comparison slider handle to avoid interfering with dragging.
 
 ---
 
