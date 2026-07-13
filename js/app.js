@@ -162,14 +162,16 @@ function setPhoto(key) {
 // ── Bottom sheet manager ──────────────────────────────────────────────────
 const backdrop   = document.getElementById('sheet-backdrop');
 const sheets     = {
-  film:   document.getElementById('sheet-film'),
-  params: document.getElementById('sheet-params'),
-  recipe: document.getElementById('sheet-recipe'),
+  film:    document.getElementById('sheet-film'),
+  params:  document.getElementById('sheet-params'),
+  recipe:  document.getElementById('sheet-recipe'),
+  options: document.getElementById('sheet-options'),
 };
 const navBtns = {
-  film:   document.getElementById('mob-btn-film'),
-  params: document.getElementById('mob-btn-params'),
-  recipe: document.getElementById('mob-btn-recipe'),
+  film:    document.getElementById('mob-btn-film'),
+  params:  document.getElementById('mob-btn-params'),
+  recipe:  document.getElementById('mob-btn-recipe'),
+  options: document.getElementById('mob-btn-options'),
 };
 let activeSheet = null;
 
@@ -227,9 +229,10 @@ document.querySelectorAll('.sheet-close').forEach(btn => {
 });
 
 // Nav button click handlers
-document.getElementById('mob-btn-film').addEventListener('click',   () => openSheet('film'));
-document.getElementById('mob-btn-params').addEventListener('click', () => openSheet('params'));
-document.getElementById('mob-btn-recipe').addEventListener('click', () => openSheet('recipe'));
+document.getElementById('mob-btn-film').addEventListener('click',    () => openSheet('film'));
+document.getElementById('mob-btn-params').addEventListener('click',  () => openSheet('params'));
+document.getElementById('mob-btn-recipe').addEventListener('click',  () => openSheet('recipe'));
+document.getElementById('mob-btn-options').addEventListener('click', () => openSheet('options'));
 
 // ── Event delegation: film sim grid (desktop + mobile) ────────────────────
 function handleFilmSimClick(e) {
