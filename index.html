@@ -127,13 +127,7 @@
       </div>
 
       <div class="preview-footer">
-        <label class="comparison-toggle">
-          <input type="checkbox" id="toggle-comparison" role="switch">
-          <span class="toggle-track"></span>
-          <span class="toggle-text">Show original</span>
-        </label>
         <button class="btn btn-ghost btn-reupload" id="btn-reupload" hidden>Upload ↑</button>
-        <p class="disclaimer">Approximate preview — results vary by camera</p>
       </div>
 
       <div class="recipe-save">
@@ -169,7 +163,7 @@
 
   </main>
 
-  <!-- Dark/light mode FAB -->
+  <!-- Dark/light mode FAB (desktop only) -->
   <button class="theme-fab" id="btn-theme" aria-label="Toggle light/dark mode">
     <!-- Moon icon (shown in light mode) -->
     <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/></svg>
@@ -177,7 +171,160 @@
     <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
   </button>
 
-  <!-- Sensor selector modal -->
+  <!-- Mobile bottom nav bar -->
+  <nav class="mobile-nav" aria-label="Mobile navigation">
+    <button class="mobile-nav-btn" id="mob-btn-film" aria-label="Open film simulation" aria-expanded="false">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="2" y="2" width="20" height="20" rx="2.5"/>
+        <rect x="7" y="2" width="3" height="4" rx="1"/>
+        <rect x="14" y="2" width="3" height="4" rx="1"/>
+        <rect x="7" y="18" width="3" height="4" rx="1"/>
+        <rect x="14" y="18" width="3" height="4" rx="1"/>
+        <circle cx="12" cy="12" r="4"/>
+        <circle cx="12" cy="12" r="1.5"/>
+      </svg>
+      <span>Film Sim</span>
+    </button>
+    <button class="mobile-nav-btn" id="mob-btn-params" aria-label="Open parameters" aria-expanded="false">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="4" y1="6" x2="20" y2="6"/>
+        <line x1="4" y1="12" x2="20" y2="12"/>
+        <line x1="4" y1="18" x2="20" y2="18"/>
+        <circle cx="8" cy="6" r="2" fill="currentColor" stroke="none"/>
+        <circle cx="16" cy="12" r="2" fill="currentColor" stroke="none"/>
+        <circle cx="10" cy="18" r="2" fill="currentColor" stroke="none"/>
+      </svg>
+      <span>Adjust</span>
+    </button>
+    <button class="mobile-nav-btn" id="mob-btn-recipe" aria-label="Open recipe panel" aria-expanded="false">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+        <polyline points="17 21 17 13 7 13 7 21"/>
+        <polyline points="7 3 7 8 15 8"/>
+      </svg>
+      <span>Recipe</span>
+    </button>
+    <button class="mobile-nav-btn" id="mob-btn-options" aria-label="Open view options" aria-expanded="false">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+      </svg>
+      <span>Options</span>
+    </button>
+  </nav>
+
+  <!-- Bottom sheet backdrop -->
+  <div class="sheet-backdrop" id="sheet-backdrop" hidden aria-hidden="true"></div>
+
+  <!-- Film Sim bottom sheet -->
+  <div class="bottom-sheet" id="sheet-film" role="dialog" aria-modal="true" aria-label="Film simulation" hidden>
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <div class="sheet-header">
+      <svg class="panel-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="2" y="2" width="20" height="20" rx="2.5"/>
+        <rect x="7" y="2" width="3" height="4" rx="1"/>
+        <rect x="14" y="2" width="3" height="4" rx="1"/>
+        <rect x="7" y="18" width="3" height="4" rx="1"/>
+        <rect x="14" y="18" width="3" height="4" rx="1"/>
+        <circle cx="12" cy="12" r="4"/>
+        <circle cx="12" cy="12" r="1.5"/>
+      </svg>
+      <h2 class="sheet-title">Film Simulation</h2>
+      <button class="sheet-close" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="sheet-body">
+      <div class="film-sim-grid" id="film-sim-grid-mobile" role="radiogroup" aria-label="Choose a film simulation"></div>
+    </div>
+  </div>
+
+  <!-- Parameters bottom sheet -->
+  <div class="bottom-sheet" id="sheet-params" role="dialog" aria-modal="true" aria-label="Recipe parameters" hidden>
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <div class="sheet-header">
+      <svg class="panel-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="4" y1="6" x2="20" y2="6"/>
+        <line x1="4" y1="12" x2="20" y2="12"/>
+        <line x1="4" y1="18" x2="20" y2="18"/>
+        <circle cx="8" cy="6" r="2" fill="currentColor" stroke="none"/>
+        <circle cx="16" cy="12" r="2" fill="currentColor" stroke="none"/>
+        <circle cx="10" cy="18" r="2" fill="currentColor" stroke="none"/>
+      </svg>
+      <h2 class="sheet-title">Parameters</h2>
+      <button class="sheet-close" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="sheet-body">
+      <div class="parameter-list" id="parameter-list-mobile"></div>
+    </div>
+  </div>
+
+  <!-- Recipe bottom sheet -->
+  <div class="bottom-sheet" id="sheet-recipe" role="dialog" aria-modal="true" aria-label="Save recipe" hidden>
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <div class="sheet-header">
+      <svg class="panel-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+        <polyline points="17 21 17 13 7 13 7 21"/>
+        <polyline points="7 3 7 8 15 8"/>
+      </svg>
+      <h2 class="sheet-title">Save Recipe</h2>
+      <button class="sheet-close" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="sheet-body">
+      <div class="recipe-save recipe-save--mobile">
+        <input class="recipe-name-input" id="recipe-name-mobile" type="text"
+               placeholder="Recipe name…" aria-label="Recipe name" maxlength="64">
+        <div class="recipe-actions">
+          <button class="btn btn-primary" id="btn-save-mobile">Save Recipe</button>
+          <button class="btn btn-ghost" id="btn-reset-mobile">Reset</button>
+        </div>
+        <button class="btn btn-export" id="btn-export-card-mobile" aria-label="Export recipe as image">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export Card
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Options bottom sheet -->
+  <div class="bottom-sheet" id="sheet-options" role="dialog" aria-modal="true" aria-label="View options" hidden>
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <div class="sheet-header">
+      <svg class="panel-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+      </svg>
+      <h2 class="sheet-title">Options</h2>
+      <button class="sheet-close" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="sheet-body">
+      <div class="options-list">
+        <label class="option-row">
+          <div class="option-info">
+            <span class="option-label">Show original</span>
+            <span class="option-desc">Split the image to compare before and after</span>
+          </div>
+          <input type="checkbox" class="option-checkbox" id="toggle-comparison" role="switch">
+          <span class="toggle-track"></span>
+        </label>
+        <label class="option-row">
+          <div class="option-info">
+            <span class="option-label">Magnifier</span>
+            <span class="option-desc">Zoom in on a region while hovering over the image</span>
+          </div>
+          <input type="checkbox" class="option-checkbox" id="toggle-magnifier" role="switch">
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+    </div>
+  </div>
   <div class="modal-overlay" id="sensor-modal" role="dialog" aria-modal="true"
        aria-labelledby="sensor-modal-title" hidden>
     <div class="modal">

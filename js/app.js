@@ -6,6 +6,8 @@ import { initTooltips }       from './components/tooltip.js';
 import { buildFilter }        from './utils/buildFilter.js';
 import { initComparisonSlider } from './components/comparisonSlider.js';
 import { exportCard }          from './utils/exportCard.js';
+import { saveRecipe }    from './utils/recipes.js';
+import { initMagnifier, setMagnifierEnabled } from './components/zoomLens.js';
 
 // ── State ──────────────────────────────────────────────────────────────────
 const PHOTOS = {
@@ -34,7 +36,9 @@ const state = {
 
 // ── DOM refs ───────────────────────────────────────────────────────────────
 const filmSimGrid       = document.getElementById('film-sim-grid');
+const filmSimGridMobile = document.getElementById('film-sim-grid-mobile');
 const paramList         = document.getElementById('parameter-list');
+const paramListMobile   = document.getElementById('parameter-list-mobile');
 const photoAfter        = document.getElementById('photo-after');
 const photoBefore       = document.getElementById('photo-before');
 const photoPicker       = document.getElementById('photo-picker');
@@ -44,11 +48,11 @@ const toggleComparison  = document.getElementById('toggle-comparison');
 const btnReupload       = document.getElementById('btn-reupload');
 
 // ── Render: film sim cards ─────────────────────────────────────────────────
-function renderFilmSims() {
+function filmSimHTML() {
   const gen = SENSOR_GENERATIONS.find(g => g.id === state.sensorId);
   const supported = new Set(gen?.supportedSimIds ?? []);
 
-  filmSimGrid.innerHTML = FILM_SIMS.map(sim => {
+  return FILM_SIMS.map(sim => {
     const gated   = !supported.has(sim.id);
     const active  = sim.id === state.filmSimId && !gated;
     const [, ...nameParts] = sim.name.split('/');
@@ -69,9 +73,15 @@ function renderFilmSims() {
   }).join('');
 }
 
+function renderFilmSims() {
+  const html = filmSimHTML();
+  if (filmSimGrid) filmSimGrid.innerHTML = html;
+  if (filmSimGridMobile) filmSimGridMobile.innerHTML = html;
+}
+
 // ── Render: parameters ────────────────────────────────────────────────────
-function renderParameters() {
-  paramList.innerHTML = PARAMETERS.map(param => {
+function parametersHTML() {
+  return PARAMETERS.map(param => {
     const gated = !isSupported(param.sensorMinGeneration, state.sensorId);
 
     if (param.type === 'select') {
@@ -116,6 +126,12 @@ function renderParameters() {
   }).join('');
 }
 
+function renderParameters() {
+  const html = parametersHTML();
+  if (paramList) paramList.innerHTML = html;
+  if (paramListMobile) paramListMobile.innerHTML = html;
+}
+
 // ── Update preview ────────────────────────────────────────────────────────
 function updatePreview() {
   const sim    = FILM_SIMS.find(s => s.id === state.filmSimId);
@@ -133,29 +149,104 @@ function setPhoto(key) {
   photoBefore.src = src;
 
   if (key === 'custom') {
-    // Match the figure's aspect ratio to the uploaded image's natural dimensions
     const img = new Image();
     img.onload = () => {
       photoFigure.style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
     };
     img.src = src;
   } else {
-    // Restore the default 3/2 ratio for the stock photos
     photoFigure.style.aspectRatio = '';
   }
 }
 
-// ── Event delegation: film sim grid ───────────────────────────────────────
-filmSimGrid.addEventListener('click', e => {
+// ── Bottom sheet manager ──────────────────────────────────────────────────
+const backdrop   = document.getElementById('sheet-backdrop');
+const sheets     = {
+  film:    document.getElementById('sheet-film'),
+  params:  document.getElementById('sheet-params'),
+  recipe:  document.getElementById('sheet-recipe'),
+  options: document.getElementById('sheet-options'),
+};
+const navBtns = {
+  film:    document.getElementById('mob-btn-film'),
+  params:  document.getElementById('mob-btn-params'),
+  recipe:  document.getElementById('mob-btn-recipe'),
+  options: document.getElementById('mob-btn-options'),
+};
+let activeSheet = null;
+
+function openSheet(key) {
+  if (activeSheet === key) { closeSheet(); return; }
+  closeSheet(false);
+
+  const sheet = sheets[key];
+  if (!sheet) return;
+  activeSheet = key;
+
+  backdrop.hidden = false;
+  requestAnimationFrame(() => {
+    backdrop.classList.add('is-visible');
+    sheet.hidden = false;
+    requestAnimationFrame(() => sheet.classList.add('is-open'));
+  });
+
+  Object.entries(navBtns).forEach(([k, btn]) => {
+    if (btn) btn.classList.toggle('is-active', k === key);
+    if (btn) btn.setAttribute('aria-expanded', String(k === key));
+  });
+
+  document.addEventListener('keydown', onEscKey);
+}
+
+function closeSheet(restoreAria = true) {
+  if (!activeSheet) return;
+  const sheet = sheets[activeSheet];
+  if (sheet) {
+    sheet.classList.remove('is-open');
+    sheet.addEventListener('transitionend', () => { sheet.hidden = true; }, { once: true });
+  }
+  backdrop.classList.remove('is-visible');
+  backdrop.addEventListener('transitionend', () => { backdrop.hidden = true; }, { once: true });
+
+  if (restoreAria) {
+    Object.values(navBtns).forEach(btn => {
+      if (btn) { btn.classList.remove('is-active'); btn.setAttribute('aria-expanded', 'false'); }
+    });
+  }
+  activeSheet = null;
+  document.removeEventListener('keydown', onEscKey);
+}
+
+function onEscKey(e) {
+  if (e.key === 'Escape') closeSheet();
+}
+
+backdrop.addEventListener('click', () => closeSheet());
+
+// Close buttons inside each sheet
+document.querySelectorAll('.sheet-close').forEach(btn => {
+  btn.addEventListener('click', () => closeSheet());
+});
+
+// Nav button click handlers
+document.getElementById('mob-btn-film').addEventListener('click',    () => openSheet('film'));
+document.getElementById('mob-btn-params').addEventListener('click',  () => openSheet('params'));
+document.getElementById('mob-btn-recipe').addEventListener('click',  () => openSheet('recipe'));
+document.getElementById('mob-btn-options').addEventListener('click', () => openSheet('options'));
+
+// ── Event delegation: film sim grid (desktop + mobile) ────────────────────
+function handleFilmSimClick(e) {
   const card = e.target.closest('.film-sim-card:not(.is-gated)');
   if (!card) return;
   state.filmSimId = card.dataset.id;
   renderFilmSims();
   updatePreview();
-});
+}
+if (filmSimGrid) filmSimGrid.addEventListener('click', handleFilmSimClick);
+if (filmSimGridMobile) filmSimGridMobile.addEventListener('click', handleFilmSimClick);
 
-// ── Event delegation: parameters ─────────────────────────────────────────
-paramList.addEventListener('input', e => {
+// ── Event delegation: parameters (desktop + mobile) ───────────────────────
+function handleParamInput(e) {
   const slider = e.target.closest('input[type="range"][data-param]');
   if (!slider) return;
   const id  = slider.dataset.param;
@@ -167,21 +258,35 @@ paramList.addEventListener('input', e => {
     valueEl.textContent = display;
     slider.setAttribute('aria-valuenow', val);
   }
+  // Mirror value to the other list
+  const otherList = e.currentTarget === paramList ? paramListMobile : paramList;
+  const mirror = otherList?.querySelector(`[data-param="${id}"][type="range"]`);
+  if (mirror) { mirror.value = val; mirror.closest('.param-row')?.querySelector('.param-value')?.textContent && (mirror.closest('.param-row').querySelector('.param-value').textContent = display); }
   updatePreview();
-});
+}
 
-paramList.addEventListener('click', e => {
+function handleParamClick(e) {
   const btn = e.target.closest('.param-option:not([disabled])');
   if (!btn) return;
   const id  = btn.dataset.param;
   const val = btn.dataset.value;
   state.params[id] = val;
-  // Update active state within this group
-  btn.closest('.param-options')?.querySelectorAll('.param-option').forEach(b => {
-    b.classList.toggle('is-active', b.dataset.value === val);
+  [paramList, paramListMobile].forEach(list => {
+    list?.querySelectorAll(`.param-option[data-param="${id}"]`).forEach(b => {
+      b.classList.toggle('is-active', b.dataset.value === val);
+    });
   });
   updatePreview();
-});
+}
+
+if (paramList) {
+  paramList.addEventListener('input', handleParamInput);
+  paramList.addEventListener('click', handleParamClick);
+}
+if (paramListMobile) {
+  paramListMobile.addEventListener('input', handleParamInput);
+  paramListMobile.addEventListener('click', handleParamClick);
+}
 
 // ── Photo picker ──────────────────────────────────────────────────────────
 const customPhotoInput  = document.getElementById('custom-photo-input');
@@ -221,10 +326,7 @@ photoPicker.addEventListener('click', e => {
   syncReuploadBtn();
 });
 
-// Upload button inside the empty-state overlay
 btnTriggerUpload.addEventListener('click', () => customPhotoInput.click());
-
-// Reupload button in the preview footer
 btnReupload.addEventListener('click', () => customPhotoInput.click());
 
 customPhotoInput.addEventListener('change', () => {
@@ -234,7 +336,6 @@ customPhotoInput.addEventListener('change', () => {
   if (customBlobUrl) URL.revokeObjectURL(customBlobUrl);
   customBlobUrl = URL.createObjectURL(file);
 
-  // Ensure Custom tab is active
   photoPicker.querySelectorAll('.photo-type-btn').forEach(b => b.classList.remove('is-active'));
   photoPicker.querySelector('[data-photo="custom"]').classList.add('is-active');
   state.photo = 'custom';
@@ -249,7 +350,6 @@ customPhotoInput.addEventListener('change', () => {
 // ── Sensor change callback ────────────────────────────────────────────────
 function onSensorChange(newId) {
   state.sensorId = newId;
-  // If active sim is no longer supported, fall back to provia
   const gen = SENSOR_GENERATIONS.find(g => g.id === newId);
   if (gen && !gen.supportedSimIds.includes(state.filmSimId)) {
     state.filmSimId = 'provia';
@@ -258,6 +358,11 @@ function onSensorChange(newId) {
   renderParameters();
   updatePreview();
 }
+
+// ── Magnifier toggle ──────────────────────────────────────────────────────
+document.getElementById('toggle-magnifier').addEventListener('change', e => {
+  setMagnifierEnabled(e.target.checked);
+});
 
 // ── Comparison toggle ─────────────────────────────────────────────────────
 let sliderInitialized = false;
@@ -271,22 +376,37 @@ toggleComparison.addEventListener('change', () => {
   }
 });
 
-// ── Reset ─────────────────────────────────────────────────────────────────
-document.getElementById('btn-reset').addEventListener('click', () => {
+// ── Reset (desktop + mobile) ──────────────────────────────────────────────
+function doReset() {
   state.filmSimId = 'provia';
   PARAMETERS.forEach(p => { state.params[p.id] = p.default; });
   renderFilmSims();
   renderParameters();
   updatePreview();
-});
+}
+document.getElementById('btn-reset').addEventListener('click', doReset);
+document.getElementById('btn-reset-mobile').addEventListener('click', doReset);
 
-// ── Export card ───────────────────────────────────────────────────────────
-document.getElementById('btn-export-card').addEventListener('click', () => {
+// ── Export card (desktop + mobile) ────────────────────────────────────────
+function doExport() {
   const gen = SENSOR_GENERATIONS.find(g => g.id === state.sensorId);
   exportCard(state.filmSimId, state.params, gen?.label ?? '');
-});
+}
+document.getElementById('btn-export-card').addEventListener('click', doExport);
+document.getElementById('btn-export-card-mobile').addEventListener('click', doExport);
 
-// ── Theme toggle ──────────────────────────────────────────────────────────
+// ── Save recipe (desktop + mobile) ───────────────────────────────────────
+function doSave(nameInputId) {
+  const input = document.getElementById(nameInputId);
+  const name  = input?.value.trim();
+  if (!name) { input?.focus(); return; }
+  saveRecipe({ name, filmSimId: state.filmSimId, params: { ...state.params }, sensorId: state.sensorId });
+  if (input) input.value = '';
+}
+document.getElementById('btn-save').addEventListener('click', () => doSave('recipe-name'));
+document.getElementById('btn-save-mobile').addEventListener('click', () => doSave('recipe-name-mobile'));
+
+// ── Theme toggle (desktop FAB + mobile nav) ───────────────────────────────
 const THEME_KEY = 'fuji-theme';
 const htmlEl    = document.documentElement;
 
@@ -295,12 +415,13 @@ function applyTheme(theme) {
   localStorage.setItem(THEME_KEY, theme);
 }
 
-document.getElementById('btn-theme').addEventListener('click', () => {
+function toggleTheme() {
   const next = htmlEl.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
   applyTheme(next);
-});
+}
 
-// Restore saved theme, fall back to OS preference
+document.getElementById('btn-theme').addEventListener('click', toggleTheme);
+
 const savedTheme = localStorage.getItem(THEME_KEY);
 if (savedTheme) {
   applyTheme(savedTheme);
@@ -315,3 +436,4 @@ setPhoto(state.photo);
 renderFilmSims();
 renderParameters();
 updatePreview();
+initMagnifier({ figure: photoFigure, after: photoAfter, before: photoBefore, overlay: comparisonOverlay });
