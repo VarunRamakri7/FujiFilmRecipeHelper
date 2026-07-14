@@ -14,6 +14,7 @@ const PHOTOS = {
   landscape:    'assets/photos/stock-landscape.jpg',
   architecture: 'assets/photos/stock-architecture.jpg',
   color:        'assets/photos/stock-color.jpg',
+  people:       'assets/photos/stock-people.jpg',
 };
 
 const state = {
