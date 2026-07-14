@@ -388,6 +388,14 @@ function doReset() {
 document.getElementById('btn-reset').addEventListener('click', doReset);
 document.getElementById('btn-reset-mobile').addEventListener('click', doReset);
 
+// ── Reset parameters only (params sheet) ─────────────────────────────────
+function doResetParams() {
+  PARAMETERS.forEach(p => { state.params[p.id] = p.default; });
+  renderParameters();
+  updatePreview();
+}
+document.getElementById('btn-reset-params-mobile').addEventListener('click', doResetParams);
+
 // ── Export card (desktop + mobile) ────────────────────────────────────────
 function doExport() {
   const gen = SENSOR_GENERATIONS.find(g => g.id === state.sensorId);
