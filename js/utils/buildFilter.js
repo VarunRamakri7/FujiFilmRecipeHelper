@@ -78,13 +78,7 @@ function parseFilter(filterStr) {
   const re = /([\w-]+)\(([^)]+)\)/g;
   let m;
   while ((m = re.exec(filterStr)) !== null) {
-    const fn  = m[1];
-    const raw = m[2].trim();
-    // Strip 'deg' suffix for hue-rotate, otherwise parse as float
-    const val = fn === 'hue-rotate'
-      ? parseFloat(raw)
-      : parseFloat(raw);
-    map.set(fn, val);
+    map.set(m[1], parseFloat(m[2]));
   }
   return map;
 }
