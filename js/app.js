@@ -14,7 +14,6 @@ const PHOTOS = {
   landscape:    'assets/photos/stock-landscape.jpg',
   architecture: 'assets/photos/stock-architecture.jpg',
   color:        'assets/photos/stock-color.jpg',
-  people:       'assets/photos/stock-people.jpg',
 };
 
 const state = {
@@ -146,10 +145,7 @@ let customBlobUrl = null;
 function setPhoto(key) {
   const src = key === 'custom' ? customBlobUrl : PHOTOS[key];
   if (!src) return;
-  photoAfter.style.display = '';
-  photoAfter.setAttribute('alt', 'Photo with recipe applied');
   photoAfter.src  = src;
-  photoBefore.setAttribute('alt', 'Original photo');
   photoBefore.src = src;
 
   if (key === 'custom') {
@@ -318,10 +314,8 @@ photoPicker.addEventListener('click', e => {
       setPhoto('custom');
       showUploadPrompt(false);
     } else {
-      photoAfter.style.display = 'none';
-      photoAfter.removeAttribute('src');
-      photoAfter.removeAttribute('alt');
-      photoBefore.removeAttribute('src');
+      photoAfter.src  = '';
+      photoBefore.src = '';
       photoFigure.style.aspectRatio = '';
       showUploadPrompt(true);
     }
@@ -392,14 +386,6 @@ function doReset() {
 }
 document.getElementById('btn-reset').addEventListener('click', doReset);
 document.getElementById('btn-reset-mobile').addEventListener('click', doReset);
-
-// ── Reset parameters only (params sheet) ─────────────────────────────────
-function doResetParams() {
-  PARAMETERS.forEach(p => { state.params[p.id] = p.default; });
-  renderParameters();
-  updatePreview();
-}
-document.getElementById('btn-reset-params-mobile').addEventListener('click', doResetParams);
 
 // ── Export card (desktop + mobile) ────────────────────────────────────────
 function doExport() {

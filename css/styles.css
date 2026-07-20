@@ -562,19 +562,13 @@ body {
 }
 .option-checkbox { position: absolute; opacity: 0; width: 0; height: 0; }
 
-/* ─── Preview footer ─────────────────────────────────────── */
+/* ─── Preview footer (reupload only) ────────────────────── */
 .preview-footer {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--sp-3);
   align-self: center;
   width: fit-content;
-}
-.preview-disclaimer {
-  font-size: 11px;
-  color: var(--text-muted);
-  opacity: 0.7;
 }
 
 /* Toggle */
@@ -838,13 +832,8 @@ body {
   flex: 1;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
-.sheet-footer {
-  padding: var(--sp-3) var(--sp-4);
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--sp-3));
-  border-top: 1px solid var(--panel-border);
-}
-.btn-full { width: 100%; justify-content: center; }
 
 /* ─── Tooltip ────────────────────────────────────────────── */
 .tooltip {
