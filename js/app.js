@@ -146,7 +146,10 @@ let customBlobUrl = null;
 function setPhoto(key) {
   const src = key === 'custom' ? customBlobUrl : PHOTOS[key];
   if (!src) return;
+  photoAfter.style.display = '';
+  photoAfter.setAttribute('alt', 'Photo with recipe applied');
   photoAfter.src  = src;
+  photoBefore.setAttribute('alt', 'Original photo');
   photoBefore.src = src;
 
   if (key === 'custom') {
@@ -315,8 +318,10 @@ photoPicker.addEventListener('click', e => {
       setPhoto('custom');
       showUploadPrompt(false);
     } else {
-      photoAfter.src  = '';
-      photoBefore.src = '';
+      photoAfter.style.display = 'none';
+      photoAfter.removeAttribute('src');
+      photoAfter.removeAttribute('alt');
+      photoBefore.removeAttribute('src');
       photoFigure.style.aspectRatio = '';
       showUploadPrompt(true);
     }
