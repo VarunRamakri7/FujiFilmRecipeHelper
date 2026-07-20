@@ -6,7 +6,7 @@ const ZOOM       = 3;    // magnification factor
 const SAMPLE_PX  = (LENS_R * 2) / ZOOM; // source region width/height in natural image px
 
 let figure, afterImg, beforeImg, overlay;
-let lens, lensCtx;
+let lens, lensCtx, dividerHandle;
 let active  = false;
 let enabled = false;
 
@@ -39,9 +39,7 @@ function sizeLens() {
 
 // ── Draw ──────────────────────────────────────────────────────────────────
 function drawLens(pctX, pctY) {
-  const D  = LENS_R * 2;
-  const dpr = window.devicePixelRatio || 1;
-
+  const D = LENS_R * 2;
   lensCtx.clearRect(0, 0, D, D);
 
   // Clip to circle
@@ -53,9 +51,7 @@ function drawLens(pctX, pctY) {
   const isComparison = !overlay.hidden;
 
   if (isComparison) {
-    // Determine which half the pointer is in
-    const handle  = figure.querySelector('.divider-handle');
-    const splitPct = handle ? parseFloat(handle.style.left || '50') / 100 : 0.5;
+    const splitPct = dividerHandle ? parseFloat(dividerHandle.style.left || '50') / 100 : 0.5;
     const inBefore = pctX <= splitPct;
     const sourceImg = inBefore ? beforeImg : afterImg;
     drawSource(lensCtx, sourceImg, pctX, pctY);
@@ -122,10 +118,8 @@ function positionLens(cx, cy) {
 
 // ── Slider hit-test ───────────────────────────────────────────────────────
 function overSlider(cx) {
-  if (overlay.hidden) return false;
-  const handle = figure.querySelector('.divider-handle');
-  if (!handle) return false;
-  const r = handle.getBoundingClientRect();
+  if (overlay.hidden || !dividerHandle) return false;
+  const r = dividerHandle.getBoundingClientRect();
   return cx >= r.left && cx <= r.right;
 }
 
@@ -157,10 +151,11 @@ function onLeave() {
 
 // ── Init ──────────────────────────────────────────────────────────────────
 export function initMagnifier({ figure: fig, after, before, overlay: ov }) {
-  figure    = fig;
-  afterImg  = after;
-  beforeImg = before;
-  overlay   = ov;
+  figure        = fig;
+  afterImg      = after;
+  beforeImg     = before;
+  overlay       = ov;
+  dividerHandle = fig.querySelector('.divider-handle');
 
   lens    = createLens();
   lensCtx = lens.getContext('2d');

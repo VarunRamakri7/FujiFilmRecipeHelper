@@ -56,8 +56,7 @@ function filmSimHTML() {
   return FILM_SIMS.map(sim => {
     const gated   = !supported.has(sim.id);
     const active  = sim.id === state.filmSimId && !gated;
-    const [, ...nameParts] = sim.name.split('/');
-    const subName = nameParts.join('/') || '';
+    const subName = sim.name.split('/').slice(1).join('/');
 
     return `<button
       class="film-sim-card${active ? ' is-active' : ''}${gated ? ' is-gated' : ''}"
@@ -82,8 +81,10 @@ function renderFilmSims() {
 
 // ── Render: parameters ────────────────────────────────────────────────────
 function parametersHTML() {
+  const sensorLabel = SENSOR_GENERATIONS.find(g => g.id === state.sensorId)?.label ?? 'your sensor';
   return PARAMETERS.map(param => {
-    const gated = !isSupported(param.sensorMinGeneration, state.sensorId);
+    const gated      = !isSupported(param.sensorMinGeneration, state.sensorId);
+    const gatedAttr  = gated ? `data-tooltip="Not available on ${sensorLabel}"` : '';
 
     if (param.type === 'select') {
       const optButtons = param.options.map(opt => `
@@ -92,8 +93,7 @@ function parametersHTML() {
                 ${gated ? 'disabled' : ''}>${opt.label}</button>
       `).join('');
       return `
-        <div class="param-row${gated ? ' is-gated' : ''}" data-id="${param.id}"
-             ${gated ? `data-tooltip="Not available on ${SENSOR_GENERATIONS.find(g=>g.id===state.sensorId)?.label ?? 'your sensor'}"` : ''}>
+        <div class="param-row${gated ? ' is-gated' : ''}" data-id="${param.id}" ${gatedAttr}>
           <div class="param-header">
             <span class="param-label">${param.label}</span>
             <button class="param-info" aria-label="About ${param.label}"
@@ -107,8 +107,7 @@ function parametersHTML() {
     const display = val > 0 ? `+${val}` : `${val}`;
     const [min, max] = param.range;
     return `
-      <div class="param-row${gated ? ' is-gated' : ''}" data-id="${param.id}"
-           ${gated ? `data-tooltip="Not available on ${SENSOR_GENERATIONS.find(g=>g.id===state.sensorId)?.label ?? 'your sensor'}"` : ''}>
+      <div class="param-row${gated ? ' is-gated' : ''}" data-id="${param.id}" ${gatedAttr}>
         <div class="param-header">
           <label class="param-label" for="p-${param.id}">${param.label}</label>
           <button class="param-info" aria-label="About ${param.label}"
@@ -153,11 +152,10 @@ function setPhoto(key) {
   photoBefore.src = src;
 
   if (key === 'custom') {
-    const img = new Image();
-    img.onload = () => {
-      photoFigure.style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
+    photoAfter.onload = () => {
+      photoFigure.style.aspectRatio = `${photoAfter.naturalWidth} / ${photoAfter.naturalHeight}`;
+      photoAfter.onload = null;
     };
-    img.src = src;
   } else {
     photoFigure.style.aspectRatio = '';
   }
@@ -233,10 +231,7 @@ document.querySelectorAll('.sheet-close').forEach(btn => {
 });
 
 // Nav button click handlers
-document.getElementById('mob-btn-film').addEventListener('click',    () => openSheet('film'));
-document.getElementById('mob-btn-params').addEventListener('click',  () => openSheet('params'));
-document.getElementById('mob-btn-recipe').addEventListener('click',  () => openSheet('recipe'));
-document.getElementById('mob-btn-options').addEventListener('click', () => openSheet('options'));
+Object.entries(navBtns).forEach(([key, btn]) => btn?.addEventListener('click', () => openSheet(key)));
 
 // ── Event delegation: film sim grid (desktop + mobile) ────────────────────
 function handleFilmSimClick(e) {
@@ -265,7 +260,11 @@ function handleParamInput(e) {
   // Mirror value to the other list
   const otherList = e.currentTarget === paramList ? paramListMobile : paramList;
   const mirror = otherList?.querySelector(`[data-param="${id}"][type="range"]`);
-  if (mirror) { mirror.value = val; mirror.closest('.param-row')?.querySelector('.param-value')?.textContent && (mirror.closest('.param-row').querySelector('.param-value').textContent = display); }
+  if (mirror) {
+    mirror.value = val;
+    const mirrorVal = mirror.closest('.param-row')?.querySelector('.param-value');
+    if (mirrorVal) mirrorVal.textContent = display;
+  }
   updatePreview();
 }
 
@@ -382,17 +381,6 @@ toggleComparison.addEventListener('change', () => {
   }
 });
 
-// ── Reset (desktop + mobile) ──────────────────────────────────────────────
-function doReset() {
-  state.filmSimId = 'provia';
-  PARAMETERS.forEach(p => { state.params[p.id] = p.default; });
-  renderFilmSims();
-  renderParameters();
-  updatePreview();
-}
-document.getElementById('btn-reset').addEventListener('click', doReset);
-document.getElementById('btn-reset-mobile').addEventListener('click', doReset);
-
 // ── Reset parameters only (params sheet) ─────────────────────────────────
 function doResetParams() {
   PARAMETERS.forEach(p => { state.params[p.id] = p.default; });
@@ -400,6 +388,15 @@ function doResetParams() {
   updatePreview();
 }
 document.getElementById('btn-reset-params-mobile').addEventListener('click', doResetParams);
+
+// ── Reset all (film sim + params) ─────────────────────────────────────────
+function doReset() {
+  state.filmSimId = 'provia';
+  doResetParams();
+  renderFilmSims();
+}
+document.getElementById('btn-reset').addEventListener('click', doReset);
+document.getElementById('btn-reset-mobile').addEventListener('click', doReset);
 
 // ── Export card (desktop + mobile) ────────────────────────────────────────
 function doExport() {
