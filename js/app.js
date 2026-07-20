@@ -56,8 +56,7 @@ function filmSimHTML() {
   return FILM_SIMS.map(sim => {
     const gated   = !supported.has(sim.id);
     const active  = sim.id === state.filmSimId && !gated;
-    const [, ...nameParts] = sim.name.split('/');
-    const subName = nameParts.join('/') || '';
+    const subName = sim.name.split('/').slice(1).join('/');
 
     return `<button
       class="film-sim-card${active ? ' is-active' : ''}${gated ? ' is-gated' : ''}"
@@ -82,8 +81,10 @@ function renderFilmSims() {
 
 // ── Render: parameters ────────────────────────────────────────────────────
 function parametersHTML() {
+  const sensorLabel = SENSOR_GENERATIONS.find(g => g.id === state.sensorId)?.label ?? 'your sensor';
   return PARAMETERS.map(param => {
-    const gated = !isSupported(param.sensorMinGeneration, state.sensorId);
+    const gated      = !isSupported(param.sensorMinGeneration, state.sensorId);
+    const gatedAttr  = gated ? `data-tooltip="Not available on ${sensorLabel}"` : '';
 
     if (param.type === 'select') {
       const optButtons = param.options.map(opt => `
@@ -92,8 +93,7 @@ function parametersHTML() {
                 ${gated ? 'disabled' : ''}>${opt.label}</button>
       `).join('');
       return `
-        <div class="param-row${gated ? ' is-gated' : ''}" data-id="${param.id}"
-             ${gated ? `data-tooltip="Not available on ${SENSOR_GENERATIONS.find(g=>g.id===state.sensorId)?.label ?? 'your sensor'}"` : ''}>
+        <div class="param-row${gated ? ' is-gated' : ''}" data-id="${param.id}" ${gatedAttr}>
           <div class="param-header">
             <span class="param-label">${param.label}</span>
             <button class="param-info" aria-label="About ${param.label}"
@@ -107,8 +107,7 @@ function parametersHTML() {
     const display = val > 0 ? `+${val}` : `${val}`;
     const [min, max] = param.range;
     return `
-      <div class="param-row${gated ? ' is-gated' : ''}" data-id="${param.id}"
-           ${gated ? `data-tooltip="Not available on ${SENSOR_GENERATIONS.find(g=>g.id===state.sensorId)?.label ?? 'your sensor'}"` : ''}>
+      <div class="param-row${gated ? ' is-gated' : ''}" data-id="${param.id}" ${gatedAttr}>
         <div class="param-header">
           <label class="param-label" for="p-${param.id}">${param.label}</label>
           <button class="param-info" aria-label="About ${param.label}"
