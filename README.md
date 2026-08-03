@@ -9,8 +9,10 @@ A web-based tool for Fujifilm X-series photographers to build, preview, and save
 - **Hover magnifier** — enable a circular lens that follows your pointer and shows a 3× zoomed region; aware of the comparison slider (each side zooms its own source)
 - **Custom photo preview** — use one of three stock photos or upload your own image; uploaded photos persist for the session
 - **Sensor-aware** — select your X-Trans generation and the UI automatically shows only the film sims and parameters your camera supports
-- **Local recipe saving** — name and save recipes to your browser; export any recipe as a `.json` file
+- **Local recipe saving** — name and save recipes to your browser; load, delete, copy as text, or export any recipe as a `.json` file from the My Recipes panel
 - **Recipe card export** — download the current recipe as a styled PNG card (dark or light theme-matched)
+- **Photo lightbox** — tap any preview photo to expand it full-screen; swipe down or press Escape to dismiss
+- **My Recipes panel** — browse all saved recipes in a bottom sheet with one-tap load, copy to clipboard, JSON export, and delete
 
 ## Usage
 
@@ -57,11 +59,11 @@ Sensor selection gates what the user can see: film simulations and parameters no
 
 - [`css/variables.css`](css/variables.css): All design tokens as CSS custom properties: the full color palette (`--fuji-black`, `--fuji-orange`, etc.), font stack references, spacing scale, border radii, and transition durations. Includes theme-aware tokens (`--preview-bg`, `--filmstrip-bg`, etc.) that switch between dark and light values via `[data-theme]`. Everything in `styles.css` references these tokens rather than hard-coded values.
 
-- [`css/styles.css`](css/styles.css): All layout and component styles. The app uses a single full-viewport layout: the preview photo fills the available width (max 1200px, capped in height to stay clear of the navigation pill), with all controls accessed via a floating pill nav at the bottom center of the screen. Each pill item opens a bottom sheet that slides up from the bottom — Film Sim, Adjust (parameters), Recipe (save/export), and Options (comparison slider, magnifier). The preview photo sits inside a padded mat frame (`--preview-pad: 20px`) using `object-fit: contain`. Breakpoints at 540px and 390px handle small-phone tweaks only.
+- [`css/styles.css`](css/styles.css): All layout and component styles. On mobile the app uses a single full-viewport preview with controls in a floating pill nav and bottom sheets. On desktop (≥1100px) it switches to a three-column grid: Film Simulation panel on the left, preview in the center, Parameters panel on the right. Recipe and Options move to the header nav on desktop. Includes styles for toast notifications, the My Recipes sheet (recipe cards with action buttons), and the full-screen photo lightbox overlay.
 
 ---
 
-- [`js/app.js`](js/app.js): Main entry point and application controller. Holds the single shared state object (active sensor, selected film sim, photo choice, all parameter values). On init it renders film sim cards and parameter controls from the data files, loads the first stock photo, and wires up all event listeners. On every interaction it updates state, re-renders where needed, and calls `buildFilter()` to refresh the preview. Handles the photo picker including the Custom tab. Manages the floating pill nav and four bottom sheets (Film Sim, Parameters, Recipe, Options). The Options sheet hosts the comparison toggle and magnifier toggle. The "Export Card" button wires to `exportCard()` with the current film sim, params, and sensor label.
+- [`js/app.js`](js/app.js): Main entry point and application controller. Holds the single shared state object (active sensor, selected film sim, photo choice, all parameter values). On init it renders film sim cards and parameter controls from the data files, loads the first stock photo, and wires up all event listeners. On every interaction it updates state, re-renders where needed, and calls `buildFilter()` to refresh the preview. Handles the photo picker (including the Custom tab and full-screen lightbox on tap). Manages the floating pill nav and bottom sheets (Film Sim, Parameters, Recipe, Options, My Recipes). The Options sheet hosts the comparison toggle and magnifier toggle. The My Recipes sheet renders saved recipes with load, copy, export, and delete actions.
 
 ---
 
@@ -91,4 +93,4 @@ Sensor selection gates what the user can see: film simulations and parameters no
 
 ---
 
-- [`assets/photos/`](assets/photos/): Three CC-licensed stock photos used as preview subjects: `stock-landscape.jpg`, `stock-architecture.jpg`, and `stock-color.jpg`. Chosen to cover a broad tonal range so that film simulation and parameter adjustments are clearly visible across different subject types.
+- [`assets/photos/`](assets/photos/): Stock photos used as preview subjects: `stock-wildlife.jpeg` (used for both Wildlife tabs), `stock-color.jpg`, and `stock-people.jpg`. Chosen to cover a broad tonal range so that film simulation and parameter adjustments are clearly visible across different subject types. A Custom tab lets users upload their own photo for the session.
