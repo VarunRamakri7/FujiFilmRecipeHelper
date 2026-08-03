@@ -47,6 +47,70 @@ const photoFigure       = document.getElementById('photo-figure');
 const comparisonOverlay = document.getElementById('comparison-overlay');
 const toggleComparison  = document.getElementById('toggle-comparison');
 const btnReupload       = document.getElementById('btn-reupload');
+const simInfoBar        = document.getElementById('sim-info-bar');
+const panelSimSubtitle  = document.getElementById('panel-sim-subtitle');
+const panelParamsBadge  = document.getElementById('panel-params-badge');
+const panelParamsBadgeMobile = document.getElementById('panel-params-badge-mobile');
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+const toastContainer = document.getElementById('toast-container');
+
+function showToast(message, type = '', duration = 2500) {
+  const el = document.createElement('div');
+  el.className = `toast${type ? ` toast--${type}` : ''}`;
+  el.textContent = message;
+  toastContainer.appendChild(el);
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('is-visible')));
+  setTimeout(() => {
+    el.classList.remove('is-visible');
+    el.addEventListener('transitionend', () => el.remove(), { once: true });
+  }, duration);
+}
+
+// ── Modified-params badge ──────────────────────────────────────────────────
+function countModifiedParams() {
+  return PARAMETERS.reduce((n, p) => {
+    const cur = state.params[p.id];
+    const def = p.default;
+    return n + (cur !== def ? 1 : 0);
+  }, 0);
+}
+
+function updateParamsBadge() {
+  const n = countModifiedParams();
+  const show = n > 0;
+  [panelParamsBadge, panelParamsBadgeMobile].forEach(el => {
+    if (!el) return;
+    el.textContent = String(n);
+    el.classList.toggle('is-visible', show);
+  });
+  // Also update the Adjust pill nav button label on mobile
+  const adjBtn = document.getElementById('mob-btn-params');
+  if (adjBtn) {
+    const span = adjBtn.querySelector('span');
+    if (span) span.textContent = show ? `Adjust · ${n}` : 'Adjust';
+  }
+}
+
+// ── Active sim subtitle (desktop panel header) ─────────────────────────────
+function updateSimSubtitle() {
+  if (!panelSimSubtitle) return;
+  const sim = FILM_SIMS.find(s => s.id === state.filmSimId);
+  if (sim) {
+    panelSimSubtitle.textContent = sim.shortName;
+    panelSimSubtitle.classList.add('is-visible');
+  }
+}
+
+// ── Sim info bar (mobile sheet footer) ────────────────────────────────────
+function updateSimInfoBar() {
+  if (!simInfoBar) return;
+  const sim = FILM_SIMS.find(s => s.id === state.filmSimId);
+  if (sim) {
+    simInfoBar.innerHTML = `<strong>${sim.shortName}</strong>${sim.description}`;
+    simInfoBar.classList.add('is-visible');
+  }
+}
 
 // ── Render: film sim cards ─────────────────────────────────────────────────
 function filmSimHTML() {
@@ -63,7 +127,7 @@ function filmSimHTML() {
       role="radio"
       aria-checked="${active}"
       data-id="${sim.id}"
-      ${gated ? `data-tooltip="Not available on ${gen?.label ?? 'your sensor'}"` : `data-tooltip="${sim.description}"`}
+      ${gated ? `data-tooltip="Not available on ${gen?.label ?? 'your sensor'}" data-gated="true"` : `data-tooltip="${sim.description}"`}
       ${gated ? 'tabindex="-1"' : ''}
     >
       <div class="card-swatch" style="--swatch:${sim.accentColor}"></div>
@@ -77,6 +141,8 @@ function renderFilmSims() {
   const html = filmSimHTML();
   if (filmSimGrid) filmSimGrid.innerHTML = html;
   if (filmSimGridMobile) filmSimGridMobile.innerHTML = html;
+  updateSimSubtitle();
+  updateSimInfoBar();
 }
 
 // ── Render: parameters ────────────────────────────────────────────────────
@@ -84,7 +150,7 @@ function parametersHTML() {
   const sensorLabel = SENSOR_GENERATIONS.find(g => g.id === state.sensorId)?.label ?? 'your sensor';
   return PARAMETERS.map(param => {
     const gated      = !isSupported(param.sensorMinGeneration, state.sensorId);
-    const gatedAttr  = gated ? `data-tooltip="Not available on ${sensorLabel}"` : '';
+    const gatedAttr  = gated ? `data-tooltip="Not available on ${sensorLabel}" data-gated="true"` : '';
 
     if (param.type === 'select') {
       const optButtons = param.options.map(opt => `
@@ -130,6 +196,7 @@ function renderParameters() {
   const html = parametersHTML();
   if (paramList) paramList.innerHTML = html;
   if (paramListMobile) paramListMobile.innerHTML = html;
+  updateParamsBadge();
 }
 
 // ── Update preview ────────────────────────────────────────────────────────
@@ -161,6 +228,20 @@ function setPhoto(key) {
   }
 }
 
+// ── Focus trap ────────────────────────────────────────────────────────────
+const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select,textarea,[tabindex]:not([tabindex="-1"])';
+
+function trapFocus(container, e) {
+  const els = [...container.querySelectorAll(FOCUSABLE)].filter(el => !el.closest('[hidden]'));
+  if (!els.length) return;
+  const first = els[0], last = els[els.length - 1];
+  if (e.shiftKey && document.activeElement === first) {
+    e.preventDefault(); last.focus();
+  } else if (!e.shiftKey && document.activeElement === last) {
+    e.preventDefault(); first.focus();
+  }
+}
+
 // ── Bottom sheet manager ──────────────────────────────────────────────────
 const backdrop   = document.getElementById('sheet-backdrop');
 const sheets     = {
@@ -176,6 +257,7 @@ const navBtns = {
   options: document.getElementById('mob-btn-options'),
 };
 let activeSheet = null;
+let activeTrapHandler = null;
 
 function openSheet(key) {
   if (activeSheet === key) { closeSheet(); return; }
@@ -189,8 +271,17 @@ function openSheet(key) {
   requestAnimationFrame(() => {
     backdrop.classList.add('is-visible');
     sheet.hidden = false;
-    requestAnimationFrame(() => sheet.classList.add('is-open'));
+    requestAnimationFrame(() => {
+      sheet.classList.add('is-open');
+      // Focus first focusable element in the sheet
+      const first = sheet.querySelector(FOCUSABLE);
+      if (first) first.focus();
+    });
   });
+
+  // Focus trap
+  activeTrapHandler = e => { if (e.key === 'Tab') trapFocus(sheet, e); };
+  sheet.addEventListener('keydown', activeTrapHandler);
 
   Object.entries(navBtns).forEach(([k, btn]) => {
     if (btn) btn.classList.toggle('is-active', k === key);
@@ -204,6 +295,8 @@ function closeSheet(restoreAria = true) {
   if (!activeSheet) return;
   const sheet = sheets[activeSheet];
   if (sheet) {
+    if (activeTrapHandler) sheet.removeEventListener('keydown', activeTrapHandler);
+    activeTrapHandler = null;
     sheet.classList.remove('is-open');
     sheet.addEventListener('transitionend', () => { sheet.hidden = true; }, { once: true });
   }
@@ -233,10 +326,63 @@ document.querySelectorAll('.sheet-close').forEach(btn => {
 // Nav button click handlers
 Object.entries(navBtns).forEach(([key, btn]) => btn?.addEventListener('click', () => openSheet(key)));
 
+// Desktop header Recipe + Options buttons wire to the same sheets
+document.getElementById('btn-header-recipe')?.addEventListener('click', () => openSheet('recipe'));
+document.getElementById('btn-header-options')?.addEventListener('click', () => openSheet('options'));
+
+// ── Swipe-to-dismiss on bottom sheets ─────────────────────────────────────
+(function initSwipeToDismiss() {
+  let startY = 0, startScrollTop = 0, dragging = false;
+
+  document.addEventListener('touchstart', e => {
+    if (!activeSheet) return;
+    const sheet = sheets[activeSheet];
+    if (!sheet || !sheet.contains(e.target)) return;
+    const body = sheet.querySelector('.sheet-body');
+    startScrollTop = body ? body.scrollTop : 0;
+    startY = e.touches[0].clientY;
+    dragging = true;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', e => {
+    if (!dragging || !activeSheet) return;
+    const sheet = sheets[activeSheet];
+    if (!sheet) return;
+    const body = sheet.querySelector('.sheet-body');
+    const dy = e.touches[0].clientY - startY;
+    // Only swipe-dismiss if scrolled to top and dragging down
+    if (dy > 0 && startScrollTop === 0) {
+      sheet.style.transform = `translateX(-50%) translateY(${Math.min(dy * 0.6, 120)}px)`;
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchend', e => {
+    if (!dragging || !activeSheet) return;
+    dragging = false;
+    const sheet = sheets[activeSheet];
+    if (!sheet) return;
+    const dy = e.changedTouches[0].clientY - startY;
+    sheet.style.transform = '';
+    if (dy > 80) closeSheet();
+  }, { passive: true });
+})();
+
 // ── Event delegation: film sim grid (desktop + mobile) ────────────────────
 function handleFilmSimClick(e) {
-  const card = e.target.closest('.film-sim-card:not(.is-gated)');
+  const card = e.target.closest('.film-sim-card');
   if (!card) return;
+
+  // Gated: flash feedback instead of silent ignore
+  if (card.dataset.gated === 'true') {
+    const gen = SENSOR_GENERATIONS.find(g => g.id === state.sensorId);
+    const needed = FILM_SIMS.find(s => s.id === card.dataset.id)?.sensorMinGeneration;
+    const neededLabel = SENSOR_GENERATIONS.find(g => g.id === needed)?.label ?? 'a newer sensor';
+    showToast(`Requires ${neededLabel} — change sensor to unlock`, 'warning', 3000);
+    card.classList.add('gated-flash');
+    card.addEventListener('animationend', () => card.classList.remove('gated-flash'), { once: true });
+    return;
+  }
+
   state.filmSimId = card.dataset.id;
   renderFilmSims();
   updatePreview();
@@ -266,6 +412,7 @@ function handleParamInput(e) {
     if (mirrorVal) mirrorVal.textContent = display;
   }
   updatePreview();
+  updateParamsBadge();
 }
 
 function handleParamClick(e) {
@@ -280,15 +427,28 @@ function handleParamClick(e) {
     });
   });
   updatePreview();
+  updateParamsBadge();
+}
+
+// Gated param-row tap feedback on mobile
+function handleParamRowClick(e) {
+  const row = e.target.closest('.param-row[data-gated="true"]');
+  if (!row) return;
+  const sensorLabel = SENSOR_GENERATIONS.find(g => g.id === state.sensorId)?.label ?? 'your sensor';
+  showToast(`This parameter requires a newer sensor than ${sensorLabel}`, 'warning', 3000);
+  row.classList.add('gated-flash');
+  row.addEventListener('animationend', () => row.classList.remove('gated-flash'), { once: true });
 }
 
 if (paramList) {
   paramList.addEventListener('input', handleParamInput);
   paramList.addEventListener('click', handleParamClick);
+  paramList.addEventListener('click', handleParamRowClick);
 }
 if (paramListMobile) {
   paramListMobile.addEventListener('input', handleParamInput);
   paramListMobile.addEventListener('click', handleParamClick);
+  paramListMobile.addEventListener('click', handleParamRowClick);
 }
 
 // ── Photo picker ──────────────────────────────────────────────────────────
@@ -356,8 +516,11 @@ customPhotoInput.addEventListener('change', () => {
 function onSensorChange(newId) {
   state.sensorId = newId;
   const gen = SENSOR_GENERATIONS.find(g => g.id === newId);
-  if (gen && !gen.supportedSimIds.includes(state.filmSimId)) {
+  const simWasSupported = gen?.supportedSimIds.includes(state.filmSimId);
+  if (gen && !simWasSupported) {
+    const oldSim = FILM_SIMS.find(s => s.id === state.filmSimId);
     state.filmSimId = 'provia';
+    showToast(`${oldSim?.shortName ?? 'Film sim'} isn't available on ${gen.label} — switched to PROVIA`, 'warning', 4000);
   }
   renderFilmSims();
   renderParameters();
@@ -386,6 +549,7 @@ function doResetParams() {
   PARAMETERS.forEach(p => { state.params[p.id] = p.default; });
   renderParameters();
   updatePreview();
+  showToast('Parameters reset');
 }
 document.getElementById('btn-reset-params-mobile').addEventListener('click', doResetParams);
 
@@ -394,6 +558,8 @@ function doReset() {
   state.filmSimId = 'provia';
   doResetParams();
   renderFilmSims();
+  // override the "parameters reset" toast with a broader message
+  showToast('Recipe reset to defaults');
 }
 document.getElementById('btn-reset').addEventListener('click', doReset);
 document.getElementById('btn-reset-mobile').addEventListener('click', doReset);
@@ -402,6 +568,7 @@ document.getElementById('btn-reset-mobile').addEventListener('click', doReset);
 function doExport() {
   const gen = SENSOR_GENERATIONS.find(g => g.id === state.sensorId);
   exportCard(state.filmSimId, state.params, gen?.label ?? '');
+  showToast('Recipe card saved to downloads');
 }
 document.getElementById('btn-export-card').addEventListener('click', doExport);
 document.getElementById('btn-export-card-mobile').addEventListener('click', doExport);
@@ -413,11 +580,27 @@ function doSave(nameInputId) {
   if (!name) { input?.focus(); return; }
   saveRecipe({ name, filmSimId: state.filmSimId, params: { ...state.params }, sensorId: state.sensorId });
   if (input) input.value = '';
+  showToast(`"${name}" saved`, 'success');
 }
 document.getElementById('btn-save').addEventListener('click', () => doSave('recipe-name'));
 document.getElementById('btn-save-mobile').addEventListener('click', () => doSave('recipe-name-mobile'));
 
-// ── Theme toggle (desktop FAB + mobile nav) ───────────────────────────────
+// ── Disclaimer icon toggle ────────────────────────────────────────────────
+const disclaimerBtn = document.getElementById('btn-disclaimer');
+if (disclaimerBtn) {
+  disclaimerBtn.addEventListener('click', () => {
+    const expanded = disclaimerBtn.getAttribute('aria-expanded') === 'true';
+    disclaimerBtn.setAttribute('aria-expanded', String(!expanded));
+  });
+  // Close on outside click
+  document.addEventListener('click', e => {
+    if (!disclaimerBtn.contains(e.target)) {
+      disclaimerBtn.setAttribute('aria-expanded', 'false');
+    }
+  });
+}
+
+// ── Theme toggle (desktop header + FAB) ──────────────────────────────────
 const THEME_KEY = 'fuji-theme';
 const htmlEl    = document.documentElement;
 
@@ -432,6 +615,7 @@ function toggleTheme() {
 }
 
 document.getElementById('btn-theme').addEventListener('click', toggleTheme);
+document.getElementById('btn-theme-header')?.addEventListener('click', toggleTheme);
 
 const savedTheme = localStorage.getItem(THEME_KEY);
 if (savedTheme) {
