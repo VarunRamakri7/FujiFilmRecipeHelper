@@ -12,7 +12,7 @@ import { initMagnifier, setMagnifierEnabled } from './components/zoomLens.js';
 // ── State ──────────────────────────────────────────────────────────────────
 const PHOTOS = {
   landscape:    'assets/photos/stock-landscape.jpg',
-  architecture: 'assets/photos/stock-architecture.jpg',
+  architecture: 'assets/photos/stock-wildlife.jpg',
   color:        'assets/photos/stock-color.jpg',
   people:       'assets/photos/stock-people.jpg',
 };
