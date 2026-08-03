@@ -2,7 +2,7 @@ import { FILM_SIMS }          from './data/filmSimulations.js';
 import { PARAMETERS }         from './data/parameters.js';
 import { SENSOR_GENERATIONS } from './data/sensorGenerations.js';
 import { initSensorSelector, getSensorGeneration, isSupported } from './components/sensorSelector.js';
-import { initTooltips }       from './components/tooltip.js';
+import { initTooltips, unpinTooltip } from './components/tooltip.js';
 import { buildFilter }        from './utils/buildFilter.js';
 import { initComparisonSlider } from './components/comparisonSlider.js';
 import { exportCard }          from './utils/exportCard.js';
@@ -92,22 +92,11 @@ function updateParamsBadge() {
 }
 
 // ── Active sim subtitle (desktop panel header) ─────────────────────────────
-function updateSimSubtitle() {
-  if (!panelSimSubtitle) return;
+function updateSimSubtitle() {  if (!panelSimSubtitle) return;
   const sim = FILM_SIMS.find(s => s.id === state.filmSimId);
   if (sim) {
     panelSimSubtitle.textContent = sim.shortName;
     panelSimSubtitle.classList.add('is-visible');
-  }
-}
-
-// ── Sim info bar (mobile sheet footer) ────────────────────────────────────
-function updateSimInfoBar() {
-  if (!simInfoBar) return;
-  const sim = FILM_SIMS.find(s => s.id === state.filmSimId);
-  if (sim) {
-    simInfoBar.innerHTML = `<strong>${sim.shortName}</strong>${sim.description}`;
-    simInfoBar.classList.add('is-visible');
   }
 }
 
@@ -141,11 +130,11 @@ function filmSimHTML() {
 }
 
 function renderFilmSims() {
+  unpinTooltip(); // clear any open tooltip before the DOM is replaced
   const html = filmSimHTML();
   if (filmSimGrid) filmSimGrid.innerHTML = html;
   if (filmSimGridMobile) filmSimGridMobile.innerHTML = html;
   updateSimSubtitle();
-  updateSimInfoBar();
 }
 
 // ── Render: parameters ────────────────────────────────────────────────────

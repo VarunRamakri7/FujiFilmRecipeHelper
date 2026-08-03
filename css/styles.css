@@ -1123,25 +1123,6 @@ body {
 }
 .panel-badge.is-visible { display: flex; }
 
-/* ── Film sim description bar (mobile sheet) ─────────────── */
-.sim-info-bar {
-  padding: var(--sp-3) var(--sp-4);
-  background: var(--surface-1);
-  border-top: 1px solid var(--border-subtle);
-  font-size: 12px;
-  color: var(--text-secondary);
-  line-height: 1.5;
-  display: none;
-}
-.sim-info-bar.is-visible { display: block; }
-.sim-info-bar strong {
-  display: block;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  font-family: var(--font-display);
-  color: var(--fuji-orange);
-  margin-bottom: 2px;
-}
 
 /* ── Disclaimer collapsed to icon ───────────────────────── */
 .disclaimer-btn {
