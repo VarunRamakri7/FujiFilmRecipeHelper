@@ -643,8 +643,13 @@ function onSensorChange(newId) {
 }
 
 // ── Magnifier toggle ──────────────────────────────────────────────────────
+let magnifierActive = false;
 document.getElementById('toggle-magnifier').addEventListener('change', e => {
-  setMagnifierEnabled(e.target.checked);
+  magnifierActive = e.target.checked;
+  setMagnifierEnabled(magnifierActive);
+  if (magnifierActive) {
+    showToast('Magnifier on — tap to expand is disabled', '', 3000);
+  }
 });
 
 // ── Comparison toggle ─────────────────────────────────────────────────────
@@ -766,6 +771,7 @@ function onLightboxKey(e) { if (e.key === 'Escape') closeLightbox(); }
 
 if (photoFigure) {
   photoFigure.addEventListener('click', e => {
+    if (magnifierActive) return;
     if (e.target.closest('.divider-handle') || e.target.closest('.mag-lens') || e.target.closest('.custom-upload-prompt')) return;
     openLightbox();
   });

@@ -1004,18 +1004,18 @@ body {
     gap: var(--sp-2);
   }
 
-  /* Filmstrip grows to fill remaining height in the preview column */
+  /* Filmstrip sits at the top of the preview column, sized to content */
   .filmstrip-frame {
-    flex: 1;
-    min-height: 0;
+    align-self: flex-start;
+    width: 100%;
   }
 
-  /* photo-figure fills the filmstrip frame */
+  /* photo-figure uses natural aspect ratio so padding is equal on all sides */
   .photo-figure {
-    aspect-ratio: unset;
+    aspect-ratio: 3 / 2;
     max-height: none;
     width: 100%;
-    height: 100%;
+    height: auto;
   }
 
   /* Recipe save stays hidden on desktop — lives in the Recipe sheet */
