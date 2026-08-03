@@ -200,7 +200,7 @@ body {
   outline-offset: -2px;
   z-index: 1;
 }
-.film-sim-card.is-gated { opacity: 0.3; pointer-events: none; }
+.film-sim-card.is-gated { opacity: 0.3; }
 
 .card-swatch {
   width: 24px;
@@ -245,7 +245,9 @@ body {
   transition: background var(--t-fast);
 }
 .param-row:hover { background: var(--panel-hover); }
-.param-row.is-gated { opacity: 0.3; pointer-events: none; }
+.param-row.is-gated { opacity: 0.3; }
+.param-row.is-gated input,
+.param-row.is-gated button { pointer-events: none; }
 
 .param-header {
   display: flex;
@@ -257,7 +259,6 @@ body {
   font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--text-secondary);
-  flex: 1;
 }
 .param-value {
   font-family: var(--font-mono);
@@ -265,6 +266,7 @@ body {
   color: var(--fuji-orange);
   min-width: 24px;
   text-align: right;
+  margin-left: auto;
 }
 .param-info {
   width: 16px;
@@ -364,6 +366,10 @@ body {
 }
 .photo-type-btn {
   flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   padding: var(--sp-2) var(--sp-3);
   font-size: 12px;
   font-weight: 500;
@@ -1205,11 +1211,43 @@ body {
 }
 
 /* ── Desktop: move Recipe + Options to header nav ─────────── */
+.header-desktop-actions { display: none; }
 @media (min-width: 1100px) {
   .header-desktop-actions { display: flex; align-items: center; gap: var(--sp-2); }
   .mobile-nav { display: none; }
 }
-.header-desktop-actions { display: none; }
+
+/* ── Film sim card info button ───────────────────────────── */
+.card-info-btn {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-1);
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: color var(--t-fast), border-color var(--t-fast);
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  cursor: pointer;
+}
+.card-info-btn:hover { color: var(--text-primary); border-color: var(--fuji-orange); }
+
+/* ── Photo tab icons ─────────────────────────────────────── */
+.photo-tab-icon { flex-shrink: 0; }
+@media (max-width: 480px) {
+  .photo-tab-label { display: none; }
+  .photo-tab-icon { width: 16px; height: 16px; }
+  .photo-type-btn { padding: var(--sp-2); }
+  .photo-type-btn--upload::after { display: none; }
+}
 
 /* ── Gated tap ripple (mobile feedback) ──────────────────── */
 .film-sim-card.gated-flash,

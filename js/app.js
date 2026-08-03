@@ -47,7 +47,6 @@ const photoFigure       = document.getElementById('photo-figure');
 const comparisonOverlay = document.getElementById('comparison-overlay');
 const toggleComparison  = document.getElementById('toggle-comparison');
 const btnReupload       = document.getElementById('btn-reupload');
-const simInfoBar        = document.getElementById('sim-info-bar');
 const panelSimSubtitle  = document.getElementById('panel-sim-subtitle');
 const panelParamsBadge  = document.getElementById('panel-params-badge');
 const panelParamsBadgeMobile = document.getElementById('panel-params-badge-mobile');
@@ -122,18 +121,22 @@ function filmSimHTML() {
     const active  = sim.id === state.filmSimId && !gated;
     const subName = sim.name.split('/').slice(1).join('/');
 
-    return `<button
+    return `<div
       class="film-sim-card${active ? ' is-active' : ''}${gated ? ' is-gated' : ''}"
       role="radio"
       aria-checked="${active}"
       data-id="${sim.id}"
-      ${gated ? `data-tooltip="Not available on ${gen?.label ?? 'your sensor'}" data-gated="true"` : `data-tooltip="${sim.description}"`}
-      ${gated ? 'tabindex="-1"' : ''}
+      ${gated ? 'data-gated="true"' : ''}
+      tabindex="${gated ? '-1' : '0'}"
     >
       <div class="card-swatch" style="--swatch:${sim.accentColor}"></div>
       <span class="card-short">${sim.shortName}</span>
       ${subName ? `<span class="card-name">${subName}</span>` : ''}
-    </button>`;
+      <button class="card-info-btn" aria-label="About ${sim.shortName}"
+              data-tooltip="${gated ? `Not available on ${gen?.label ?? 'your sensor'}` : sim.description}"
+              tabindex="${gated ? '-1' : '0'}"
+              aria-hidden="${gated ? 'true' : 'false'}">i</button>
+    </div>`;
   }).join('');
 }
 
@@ -369,12 +372,14 @@ document.getElementById('btn-header-options')?.addEventListener('click', () => o
 
 // ── Event delegation: film sim grid (desktop + mobile) ────────────────────
 function handleFilmSimClick(e) {
+  // Let info button clicks pass through to tooltip; don't select the sim
+  if (e.target.closest('.card-info-btn')) return;
+
   const card = e.target.closest('.film-sim-card');
   if (!card) return;
 
   // Gated: flash feedback instead of silent ignore
   if (card.dataset.gated === 'true') {
-    const gen = SENSOR_GENERATIONS.find(g => g.id === state.sensorId);
     const needed = FILM_SIMS.find(s => s.id === card.dataset.id)?.sensorMinGeneration;
     const neededLabel = SENSOR_GENERATIONS.find(g => g.id === needed)?.label ?? 'a newer sensor';
     showToast(`Requires ${neededLabel} — change sensor to unlock`, 'warning', 3000);
@@ -387,8 +392,26 @@ function handleFilmSimClick(e) {
   renderFilmSims();
   updatePreview();
 }
-if (filmSimGrid) filmSimGrid.addEventListener('click', handleFilmSimClick);
-if (filmSimGridMobile) filmSimGridMobile.addEventListener('click', handleFilmSimClick);
+
+function handleFilmSimKeydown(e) {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  if (e.target.closest('.card-info-btn')) return;
+  const card = e.target.closest('.film-sim-card');
+  if (!card || card.dataset.gated === 'true') return;
+  e.preventDefault();
+  state.filmSimId = card.dataset.id;
+  renderFilmSims();
+  updatePreview();
+}
+
+if (filmSimGrid) {
+  filmSimGrid.addEventListener('click', handleFilmSimClick);
+  filmSimGrid.addEventListener('keydown', handleFilmSimKeydown);
+}
+if (filmSimGridMobile) {
+  filmSimGridMobile.addEventListener('click', handleFilmSimClick);
+  filmSimGridMobile.addEventListener('keydown', handleFilmSimKeydown);
+}
 
 // ── Event delegation: parameters (desktop + mobile) ───────────────────────
 function handleParamInput(e) {
@@ -545,20 +568,19 @@ toggleComparison.addEventListener('change', () => {
 });
 
 // ── Reset parameters only (params sheet) ─────────────────────────────────
-function doResetParams() {
+function doResetParams(silent = false) {
   PARAMETERS.forEach(p => { state.params[p.id] = p.default; });
   renderParameters();
   updatePreview();
-  showToast('Parameters reset');
+  if (!silent) showToast('Parameters reset');
 }
-document.getElementById('btn-reset-params-mobile').addEventListener('click', doResetParams);
+document.getElementById('btn-reset-params-mobile').addEventListener('click', () => doResetParams());
 
 // ── Reset all (film sim + params) ─────────────────────────────────────────
 function doReset() {
   state.filmSimId = 'provia';
-  doResetParams();
+  doResetParams(true);
   renderFilmSims();
-  // override the "parameters reset" toast with a broader message
   showToast('Recipe reset to defaults');
 }
 document.getElementById('btn-reset').addEventListener('click', doReset);

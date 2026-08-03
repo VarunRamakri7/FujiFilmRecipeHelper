@@ -118,11 +118,26 @@
     <section class="panel panel-preview" aria-label="Recipe preview">
 
       <div class="photo-picker" id="photo-picker" role="group" aria-label="Choose a test photo">
-        <button class="photo-type-btn is-active" data-photo="landscape">Landscape</button>
-        <button class="photo-type-btn" data-photo="architecture">Architecture</button>
-        <button class="photo-type-btn" data-photo="color">Color</button>
-        <button class="photo-type-btn" data-photo="people">People</button>
-        <button class="photo-type-btn photo-type-btn--upload" data-photo="custom" id="btn-custom-photo">Custom</button>
+        <button class="photo-type-btn is-active" data-photo="landscape">
+          <svg class="photo-tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18l4-8 4 6 3-4 4 6"/><rect x="2" y="3" width="20" height="18" rx="2"/></svg>
+          <span class="photo-tab-label">Landscape</span>
+        </button>
+        <button class="photo-type-btn" data-photo="architecture">
+          <svg class="photo-tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="15" rx="1"/><path d="M7 7V5a2 2 0 0 1 4 0v2M13 7V5a2 2 0 0 1 4 0v2"/><line x1="12" y1="12" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+          <span class="photo-tab-label">Architecture</span>
+        </button>
+        <button class="photo-type-btn" data-photo="color">
+          <svg class="photo-tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="12.5" r="2.5"/><path d="M12 22C9.5 21 2 16.5 2 11.5a4.5 4.5 0 0 1 8-2.83A4.5 4.5 0 0 1 20 11.5c0 5-7 9.5-8 10.5z"/></svg>
+          <span class="photo-tab-label">Color</span>
+        </button>
+        <button class="photo-type-btn" data-photo="people">
+          <svg class="photo-tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75M21 21v-2a4 4 0 0 0-3-3.87"/></svg>
+          <span class="photo-tab-label">People</span>
+        </button>
+        <button class="photo-type-btn photo-type-btn--upload" data-photo="custom" id="btn-custom-photo">
+          <svg class="photo-tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <span class="photo-tab-label">Custom</span>
+        </button>
         <input type="file" id="custom-photo-input" accept="image/*" aria-label="Upload a custom photo" style="display:none">
       </div>
 
@@ -260,7 +275,6 @@
     <div class="sheet-body">
       <div class="film-sim-grid" id="film-sim-grid-mobile" role="radiogroup" aria-label="Choose a film simulation"></div>
     </div>
-    <div class="sim-info-bar" id="sim-info-bar" aria-live="polite"></div>
   </div>
 
   <!-- Parameters bottom sheet -->
