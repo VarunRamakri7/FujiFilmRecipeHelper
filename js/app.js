@@ -251,21 +251,8 @@ const navBtns = {
 };
 let activeSheet = null;
 let activeTrapHandler = null;
-let paramsExpanded = false;
-
-function isMobile() { return window.innerWidth < 1100; }
 
 function openSheet(key) {
-  // Params on mobile: toggle expand/collapse (never fully dismiss)
-  if (key === 'params' && isMobile()) {
-    if (paramsExpanded) {
-      collapseParams();
-    } else {
-      expandParams();
-    }
-    return;
-  }
-
   if (activeSheet === key) { closeSheet(); return; }
   closeSheet(false);
 
@@ -279,13 +266,11 @@ function openSheet(key) {
     sheet.hidden = false;
     requestAnimationFrame(() => {
       sheet.classList.add('is-open');
-      // Focus first focusable element in the sheet
       const first = sheet.querySelector(FOCUSABLE);
       if (first) first.focus();
     });
   });
 
-  // Focus trap
   activeTrapHandler = e => { if (e.key === 'Tab') trapFocus(sheet, e); };
   sheet.addEventListener('keydown', activeTrapHandler);
 
@@ -297,40 +282,7 @@ function openSheet(key) {
   document.addEventListener('keydown', onEscKey);
 }
 
-function expandParams() {
-  const sheet = sheets.params;
-  if (!sheet) return;
-  paramsExpanded = true;
-  sheet.classList.add('is-expanded');
-  backdrop.hidden = false;
-  requestAnimationFrame(() => backdrop.classList.add('is-visible'));
-
-  const paramsBtn = navBtns.params;
-  if (paramsBtn) { paramsBtn.classList.add('is-active'); paramsBtn.setAttribute('aria-expanded', 'true'); }
-
-  activeTrapHandler = e => { if (e.key === 'Tab') trapFocus(sheet, e); };
-  sheet.addEventListener('keydown', activeTrapHandler);
-  document.addEventListener('keydown', onEscKey);
-}
-
-function collapseParams() {
-  const sheet = sheets.params;
-  if (!sheet) return;
-  paramsExpanded = false;
-  sheet.classList.remove('is-expanded');
-  if (activeTrapHandler) { sheet.removeEventListener('keydown', activeTrapHandler); activeTrapHandler = null; }
-  backdrop.classList.remove('is-visible');
-  backdrop.addEventListener('transitionend', () => { backdrop.hidden = true; }, { once: true });
-  const paramsBtn = navBtns.params;
-  if (paramsBtn) { paramsBtn.classList.remove('is-active'); paramsBtn.setAttribute('aria-expanded', 'false'); }
-  document.removeEventListener('keydown', onEscKey);
-}
-
 function closeSheet(restoreAria = true) {
-  if (!activeSheet && paramsExpanded && isMobile()) {
-    collapseParams();
-    return;
-  }
   if (!activeSheet) return;
   const sheet = sheets[activeSheet];
   if (sheet) {
@@ -480,15 +432,6 @@ if (recipesListContainer) {
   let startY = 0, startScrollTop = 0, dragging = false;
 
   document.addEventListener('touchstart', e => {
-    const paramsSheet = sheets.params;
-    // Allow touch on params sheet even when it's in peek state (not activeSheet)
-    if (!activeSheet && paramsSheet && paramsSheet.contains(e.target)) {
-      const body = paramsSheet.querySelector('.sheet-body');
-      startScrollTop = body ? body.scrollTop : 0;
-      startY = e.touches[0].clientY;
-      dragging = true;
-      return;
-    }
     if (!activeSheet) return;
     const sheet = sheets[activeSheet];
     if (!sheet || !sheet.contains(e.target)) return;
@@ -499,46 +442,21 @@ if (recipesListContainer) {
   }, { passive: true });
 
   document.addEventListener('touchmove', e => {
-    if (!dragging) return;
-    const paramsSheet = sheets.params;
-    const dy = e.touches[0].clientY - startY;
-
-    // Params peek: swipe up → expand animation preview; swipe down when expanded → collapse preview
-    if (!activeSheet && paramsSheet && paramsSheet.contains(e.target)) {
-      if (dy < 0 && !paramsExpanded) {
-        paramsSheet.style.transform = `translateX(-50%) translateY(${Math.max(dy * 0.4, -60)}px)`;
-      } else if (dy > 0 && paramsExpanded && startScrollTop === 0) {
-        paramsSheet.style.transform = `translateX(-50%) translateY(${Math.min(dy * 0.6, 120)}px)`;
-      }
-      return;
-    }
-
-    if (!activeSheet) return;
+    if (!dragging || !activeSheet) return;
     const sheet = sheets[activeSheet];
     if (!sheet) return;
-    // Only swipe-dismiss if scrolled to top and dragging down
+    const dy = e.touches[0].clientY - startY;
     if (dy > 0 && startScrollTop === 0) {
       sheet.style.transform = `translateX(-50%) translateY(${Math.min(dy * 0.6, 120)}px)`;
     }
   }, { passive: true });
 
   document.addEventListener('touchend', e => {
-    if (!dragging) return;
+    if (!dragging || !activeSheet) return;
     dragging = false;
-    const paramsSheet = sheets.params;
-    const dy = e.changedTouches[0].clientY - startY;
-
-    // Params peek: fast swipe up → expand; swipe down when expanded → collapse
-    if (!activeSheet && paramsSheet && paramsSheet.contains(e.target)) {
-      paramsSheet.style.transform = '';
-      if (dy < -50 && !paramsExpanded) expandParams();
-      else if (dy > 80 && paramsExpanded) collapseParams();
-      return;
-    }
-
-    if (!activeSheet) return;
     const sheet = sheets[activeSheet];
     if (!sheet) return;
+    const dy = e.changedTouches[0].clientY - startY;
     sheet.style.transform = '';
     if (dy > 80) closeSheet();
   }, { passive: true });
@@ -868,27 +786,6 @@ if (lightboxEl) {
   }, { passive: true });
 }
 
-// ── Params peek init ──────────────────────────────────────────────────────
-function initParamsPeek() {
-  if (window.innerWidth >= 1100) return;
-  const sheet = sheets.params;
-  if (!sheet) return;
-  sheet.removeAttribute('hidden');
-}
-
-window.addEventListener('resize', () => {
-  const sheet = sheets.params;
-  if (!sheet) return;
-  if (window.innerWidth >= 1100) {
-    sheet.hidden = true;
-    sheet.classList.remove('is-expanded');
-    paramsExpanded = false;
-    if (activeTrapHandler) { sheet.removeEventListener('keydown', activeTrapHandler); activeTrapHandler = null; }
-  } else {
-    sheet.removeAttribute('hidden');
-  }
-});
-
 // ── Init ──────────────────────────────────────────────────────────────────
 initTooltips();
 initSensorSelector(onSensorChange);
@@ -897,4 +794,3 @@ renderFilmSims();
 renderParameters();
 updatePreview();
 initMagnifier({ figure: photoFigure, after: photoAfter, before: photoBefore, overlay: comparisonOverlay });
-initParamsPeek();
