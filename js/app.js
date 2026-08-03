@@ -6,7 +6,7 @@ import { initTooltips, unpinTooltip } from './components/tooltip.js';
 import { buildFilter }        from './utils/buildFilter.js';
 import { initComparisonSlider } from './components/comparisonSlider.js';
 import { exportCard }          from './utils/exportCard.js';
-import { saveRecipe }    from './utils/recipes.js';
+import { saveRecipe, loadRecipes, deleteRecipe, exportRecipe } from './utils/recipes.js';
 import { initMagnifier, setMagnifierEnabled } from './components/zoomLens.js';
 
 // ── State ──────────────────────────────────────────────────────────────────
@@ -241,6 +241,7 @@ const sheets     = {
   params:  document.getElementById('sheet-params'),
   recipe:  document.getElementById('sheet-recipe'),
   options: document.getElementById('sheet-options'),
+  recipes: document.getElementById('sheet-recipes'),
 };
 const navBtns = {
   film:    document.getElementById('mob-btn-film'),
@@ -250,8 +251,21 @@ const navBtns = {
 };
 let activeSheet = null;
 let activeTrapHandler = null;
+let paramsExpanded = false;
+
+function isMobile() { return window.innerWidth < 1100; }
 
 function openSheet(key) {
+  // Params on mobile: toggle expand/collapse (never fully dismiss)
+  if (key === 'params' && isMobile()) {
+    if (paramsExpanded) {
+      collapseParams();
+    } else {
+      expandParams();
+    }
+    return;
+  }
+
   if (activeSheet === key) { closeSheet(); return; }
   closeSheet(false);
 
@@ -283,7 +297,40 @@ function openSheet(key) {
   document.addEventListener('keydown', onEscKey);
 }
 
+function expandParams() {
+  const sheet = sheets.params;
+  if (!sheet) return;
+  paramsExpanded = true;
+  sheet.classList.add('is-expanded');
+  backdrop.hidden = false;
+  requestAnimationFrame(() => backdrop.classList.add('is-visible'));
+
+  const paramsBtn = navBtns.params;
+  if (paramsBtn) { paramsBtn.classList.add('is-active'); paramsBtn.setAttribute('aria-expanded', 'true'); }
+
+  activeTrapHandler = e => { if (e.key === 'Tab') trapFocus(sheet, e); };
+  sheet.addEventListener('keydown', activeTrapHandler);
+  document.addEventListener('keydown', onEscKey);
+}
+
+function collapseParams() {
+  const sheet = sheets.params;
+  if (!sheet) return;
+  paramsExpanded = false;
+  sheet.classList.remove('is-expanded');
+  if (activeTrapHandler) { sheet.removeEventListener('keydown', activeTrapHandler); activeTrapHandler = null; }
+  backdrop.classList.remove('is-visible');
+  backdrop.addEventListener('transitionend', () => { backdrop.hidden = true; }, { once: true });
+  const paramsBtn = navBtns.params;
+  if (paramsBtn) { paramsBtn.classList.remove('is-active'); paramsBtn.setAttribute('aria-expanded', 'false'); }
+  document.removeEventListener('keydown', onEscKey);
+}
+
 function closeSheet(restoreAria = true) {
+  if (!activeSheet && paramsExpanded && isMobile()) {
+    collapseParams();
+    return;
+  }
   if (!activeSheet) return;
   const sheet = sheets[activeSheet];
   if (sheet) {
@@ -322,11 +369,126 @@ Object.entries(navBtns).forEach(([key, btn]) => btn?.addEventListener('click', (
 document.getElementById('btn-header-recipe')?.addEventListener('click', () => openSheet('recipe'));
 document.getElementById('btn-header-options')?.addEventListener('click', () => openSheet('options'));
 
+// My Recipes header button
+document.getElementById('btn-my-recipes')?.addEventListener('click', () => {
+  renderRecipesSheet();
+  openSheet('recipes');
+});
+
+// ── My Recipes sheet ──────────────────────────────────────────────────────
+const recipesListContainer = document.getElementById('recipes-list-container');
+
+function formatRecipeText(recipe) {
+  const sim = FILM_SIMS.find(s => s.id === recipe.filmSimId);
+  const gen = SENSOR_GENERATIONS.find(g => g.id === recipe.sensorId);
+  const lines = [
+    `Recipe: ${recipe.name}`,
+    `Film Sim: ${sim?.shortName ?? recipe.filmSimId}`,
+    gen ? `Sensor: ${gen.label}` : null,
+    '',
+    ...PARAMETERS.map(p => {
+      const val = recipe.params[p.id];
+      return val !== undefined ? `${p.label}: ${val}` : null;
+    }).filter(Boolean),
+  ].filter(l => l !== null);
+  return lines.join('\n');
+}
+
+function renderRecipesSheet() {
+  if (!recipesListContainer) return;
+  const recipes = loadRecipes();
+  if (!recipes.length) {
+    recipesListContainer.innerHTML = `
+      <div class="recipes-empty">
+        <svg class="recipes-empty-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/>
+          <polyline points="7 3 7 8 15 8"/>
+        </svg>
+        <span class="recipes-empty-title">No saved recipes yet</span>
+        <span class="recipes-empty-sub">Save a recipe using the Recipe panel, then find it here.</span>
+      </div>`;
+    return;
+  }
+
+  recipesListContainer.innerHTML = recipes.map(recipe => {
+    const sim = FILM_SIMS.find(s => s.id === recipe.filmSimId);
+    const gen = SENSOR_GENERATIONS.find(g => g.id === recipe.sensorId);
+    const date = recipe.createdAt ? new Date(recipe.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '';
+    const meta = [sim?.shortName, gen?.label, date].filter(Boolean).join(' · ');
+    return `<div class="recipe-card" data-recipe-id="${recipe.id}">
+      <div class="recipe-card-info">
+        <span class="recipe-card-name">${recipe.name}</span>
+        <span class="recipe-card-meta">${meta}</span>
+      </div>
+      <div class="recipe-card-actions">
+        <button class="recipe-action-btn recipe-action-btn--load" data-action="load" data-recipe-id="${recipe.id}" aria-label="Load ${recipe.name}" title="Load recipe">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="5 12 12 5 19 12"/><line x1="12" y1="5" x2="12" y2="19"/></svg>
+        </button>
+        <button class="recipe-action-btn" data-action="copy" data-recipe-id="${recipe.id}" aria-label="Copy ${recipe.name}" title="Copy as text">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+        <button class="recipe-action-btn" data-action="export" data-recipe-id="${recipe.id}" aria-label="Export ${recipe.name}" title="Export as JSON">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+        <button class="recipe-action-btn recipe-action-btn--delete" data-action="delete" data-recipe-id="${recipe.id}" aria-label="Delete ${recipe.name}" title="Delete recipe">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+if (recipesListContainer) {
+  recipesListContainer.addEventListener('click', e => {
+    const btn = e.target.closest('[data-action][data-recipe-id]');
+    if (!btn) return;
+    const id = btn.dataset.recipeId;
+    const action = btn.dataset.action;
+    const recipes = loadRecipes();
+    const recipe = recipes.find(r => r.id === id);
+    if (!recipe && action !== 'delete') return;
+
+    if (action === 'load') {
+      state.filmSimId = recipe.filmSimId;
+      state.params = { ...recipe.params };
+      if (recipe.sensorId) state.sensorId = recipe.sensorId;
+      renderFilmSims();
+      renderParameters();
+      updatePreview();
+      closeSheet();
+      showToast(`"${recipe.name}" loaded`, 'success');
+    } else if (action === 'delete') {
+      deleteRecipe(id);
+      renderRecipesSheet();
+      showToast('Recipe deleted');
+    } else if (action === 'export') {
+      exportRecipe(id);
+      showToast('Recipe JSON saved');
+    } else if (action === 'copy') {
+      const text = formatRecipeText(recipe);
+      navigator.clipboard.writeText(text).then(
+        () => showToast('Copied to clipboard', 'success'),
+        () => showToast('Copy failed — try again', 'warning'),
+      );
+    }
+  });
+}
+
 // ── Swipe-to-dismiss on bottom sheets ─────────────────────────────────────
 (function initSwipeToDismiss() {
   let startY = 0, startScrollTop = 0, dragging = false;
 
   document.addEventListener('touchstart', e => {
+    const paramsSheet = sheets.params;
+    // Allow touch on params sheet even when it's in peek state (not activeSheet)
+    if (!activeSheet && paramsSheet && paramsSheet.contains(e.target)) {
+      const body = paramsSheet.querySelector('.sheet-body');
+      startScrollTop = body ? body.scrollTop : 0;
+      startY = e.touches[0].clientY;
+      dragging = true;
+      return;
+    }
     if (!activeSheet) return;
     const sheet = sheets[activeSheet];
     if (!sheet || !sheet.contains(e.target)) return;
@@ -337,11 +499,23 @@ document.getElementById('btn-header-options')?.addEventListener('click', () => o
   }, { passive: true });
 
   document.addEventListener('touchmove', e => {
-    if (!dragging || !activeSheet) return;
+    if (!dragging) return;
+    const paramsSheet = sheets.params;
+    const dy = e.touches[0].clientY - startY;
+
+    // Params peek: swipe up → expand animation preview; swipe down when expanded → collapse preview
+    if (!activeSheet && paramsSheet && paramsSheet.contains(e.target)) {
+      if (dy < 0 && !paramsExpanded) {
+        paramsSheet.style.transform = `translateX(-50%) translateY(${Math.max(dy * 0.4, -60)}px)`;
+      } else if (dy > 0 && paramsExpanded && startScrollTop === 0) {
+        paramsSheet.style.transform = `translateX(-50%) translateY(${Math.min(dy * 0.6, 120)}px)`;
+      }
+      return;
+    }
+
+    if (!activeSheet) return;
     const sheet = sheets[activeSheet];
     if (!sheet) return;
-    const body = sheet.querySelector('.sheet-body');
-    const dy = e.touches[0].clientY - startY;
     // Only swipe-dismiss if scrolled to top and dragging down
     if (dy > 0 && startScrollTop === 0) {
       sheet.style.transform = `translateX(-50%) translateY(${Math.min(dy * 0.6, 120)}px)`;
@@ -349,11 +523,22 @@ document.getElementById('btn-header-options')?.addEventListener('click', () => o
   }, { passive: true });
 
   document.addEventListener('touchend', e => {
-    if (!dragging || !activeSheet) return;
+    if (!dragging) return;
     dragging = false;
+    const paramsSheet = sheets.params;
+    const dy = e.changedTouches[0].clientY - startY;
+
+    // Params peek: fast swipe up → expand; swipe down when expanded → collapse
+    if (!activeSheet && paramsSheet && paramsSheet.contains(e.target)) {
+      paramsSheet.style.transform = '';
+      if (dy < -50 && !paramsExpanded) expandParams();
+      else if (dy > 80 && paramsExpanded) collapseParams();
+      return;
+    }
+
+    if (!activeSheet) return;
     const sheet = sheets[activeSheet];
     if (!sheet) return;
-    const dy = e.changedTouches[0].clientY - startY;
     sheet.style.transform = '';
     if (dy > 80) closeSheet();
   }, { passive: true });
@@ -635,6 +820,75 @@ if (savedTheme) {
   applyTheme('light');
 }
 
+// ── Photo lightbox ────────────────────────────────────────────────────────
+const lightboxEl  = document.getElementById('photo-lightbox');
+const lightboxImg = document.getElementById('lightbox-img');
+
+function openLightbox() {
+  if (!lightboxEl || !lightboxImg) return;
+  if (!photoAfter.src || photoAfter.style.display === 'none') return;
+  lightboxImg.src = photoAfter.src;
+  lightboxImg.style.filter = photoAfter.style.filter;
+  lightboxEl.removeAttribute('hidden');
+  requestAnimationFrame(() => requestAnimationFrame(() => lightboxEl.classList.add('is-open')));
+  document.addEventListener('keydown', onLightboxKey);
+}
+
+function closeLightbox() {
+  if (!lightboxEl) return;
+  lightboxEl.classList.remove('is-open');
+  lightboxEl.addEventListener('transitionend', () => {
+    lightboxEl.hidden = true;
+    lightboxImg.src = '';
+    lightboxImg.style.filter = '';
+  }, { once: true });
+  document.removeEventListener('keydown', onLightboxKey);
+}
+
+function onLightboxKey(e) { if (e.key === 'Escape') closeLightbox(); }
+
+if (photoFigure) {
+  photoFigure.addEventListener('click', e => {
+    if (e.target.closest('.divider-handle') || e.target.closest('.mag-lens') || e.target.closest('.custom-upload-prompt')) return;
+    openLightbox();
+  });
+}
+
+if (lightboxEl) {
+  lightboxEl.addEventListener('click', e => {
+    if (!e.target.closest('.lightbox-img')) closeLightbox();
+  });
+  lightboxEl.querySelector('.lightbox-close')?.addEventListener('click', closeLightbox);
+
+  // Swipe down to close
+  let lbStartY = 0;
+  lightboxEl.addEventListener('touchstart', e => { lbStartY = e.touches[0].clientY; }, { passive: true });
+  lightboxEl.addEventListener('touchend', e => {
+    if (e.changedTouches[0].clientY - lbStartY > 80) closeLightbox();
+  }, { passive: true });
+}
+
+// ── Params peek init ──────────────────────────────────────────────────────
+function initParamsPeek() {
+  if (window.innerWidth >= 1100) return;
+  const sheet = sheets.params;
+  if (!sheet) return;
+  sheet.removeAttribute('hidden');
+}
+
+window.addEventListener('resize', () => {
+  const sheet = sheets.params;
+  if (!sheet) return;
+  if (window.innerWidth >= 1100) {
+    sheet.hidden = true;
+    sheet.classList.remove('is-expanded');
+    paramsExpanded = false;
+    if (activeTrapHandler) { sheet.removeEventListener('keydown', activeTrapHandler); activeTrapHandler = null; }
+  } else {
+    sheet.removeAttribute('hidden');
+  }
+});
+
 // ── Init ──────────────────────────────────────────────────────────────────
 initTooltips();
 initSensorSelector(onSensorChange);
@@ -643,3 +897,4 @@ renderFilmSims();
 renderParameters();
 updatePreview();
 initMagnifier({ figure: photoFigure, after: photoAfter, before: photoBefore, overlay: comparisonOverlay });
+initParamsPeek();
