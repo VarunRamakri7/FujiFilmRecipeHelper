@@ -729,7 +729,6 @@ function toggleTheme() {
 }
 
 document.getElementById('btn-theme').addEventListener('click', toggleTheme);
-document.getElementById('btn-theme-header')?.addEventListener('click', toggleTheme);
 
 const savedTheme = localStorage.getItem(THEME_KEY);
 if (savedTheme) {
