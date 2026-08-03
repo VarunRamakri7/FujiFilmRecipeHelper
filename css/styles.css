@@ -948,6 +948,54 @@ body {
   padding: var(--sp-4);
 }
 
+/* ── Desktop ≥ 1100px ─────────────────────────────────────── */
+@media (min-width: 1100px) {
+
+  /* 3-column grid: narrow side panels keep the preview as the hero */
+  .app-layout {
+    display: grid;
+    grid-template-columns: 210px 1fr 230px;
+    gap: var(--sp-4);
+    align-items: start;
+    padding: var(--sp-6) var(--sp-6) var(--sp-8);
+  }
+
+  /* Show side panels */
+  .panel-film,
+  .panel-params {
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: calc(56px + var(--sp-4));
+    max-height: calc(100dvh - 56px - var(--sp-8));
+    overflow: hidden;
+  }
+
+  /* Side panel body scrolls; header stays sticky */
+  .panel-film  .film-sim-grid,
+  .panel-params .parameter-list {
+    overflow-y: auto;
+    flex: 1;
+    overscroll-behavior: contain;
+  }
+
+  /* Recipe save visible in center panel on desktop */
+  .panel-preview .recipe-save { display: flex; }
+
+  /* Remove Film Sim and Adjust from the pill nav on desktop */
+  #mob-btn-film,
+  #mob-btn-params { display: none; }
+}
+
+/* ── Wide desktop ≥ 1400px ─────────────────────────────────── */
+@media (min-width: 1400px) {
+  .app-layout {
+    grid-template-columns: 240px 1fr 260px;
+    gap: var(--sp-6);
+    padding: var(--sp-6) var(--sp-8) var(--sp-8);
+  }
+}
+
 /* ── Phone ≤ 540px ─────────────────────────────────────────── */
 @media (max-width: 540px) {
   .app-layout { padding: var(--sp-3) var(--sp-3) 120px; }
