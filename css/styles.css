@@ -1255,6 +1255,7 @@ body {
 @media (min-width: 1100px) {
   .header-desktop-actions { display: flex; align-items: center; gap: var(--sp-2); }
   .mobile-nav { display: none; }
+  #btn-my-recipes { display: none; }
 }
 
 /* ── Film sim card info button ───────────────────────────── */
@@ -1496,3 +1497,28 @@ body {
   transition: color var(--t-fast), border-color var(--t-fast);
 }
 .disclaimer-inline-close:hover { color: var(--text-primary); border-color: var(--text-muted); }
+
+/* ── Delight ─────────────────────────────────────────────────────────────── */
+
+/* 3. Param value display — snap-in on change                                 */
+.param-value.is-snapping {
+  animation: valueSnap 180ms cubic-bezier(0.2, 0, 0, 1) forwards;
+}
+@keyframes valueSnap {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+/* 4. Save button — shutter ripple — removed */
+
+/* 5. Photo transition — handled with opacity on photo-after (see JS)         */
+.photo-after {
+  transition: opacity 110ms ease;
+}
+
+/* Respect reduced-motion — cut all authored effects to instant               */
+@media (prefers-reduced-motion: reduce) {
+  .param-value.is-snapping { animation: none; }
+  .photo-after { transition: none; }
+}

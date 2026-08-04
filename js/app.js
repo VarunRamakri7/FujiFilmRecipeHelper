@@ -247,6 +247,30 @@ let customBlobUrl = null;
 function setPhoto(key) {
   const src = key === 'custom' ? customBlobUrl : PHOTOS[key];
   if (!src) return;
+
+  // Delight: crossfade between test photos
+  const isSwitch = photoAfter.src && !photoAfter.src.endsWith('/') && photoAfter.style.display !== 'none';
+  if (isSwitch) {
+    photoAfter.style.opacity = '0';
+    setTimeout(() => {
+      photoAfter.style.display = '';
+      photoAfter.setAttribute('alt', 'Photo with recipe applied');
+      photoAfter.src  = src;
+      photoBefore.setAttribute('alt', 'Original photo');
+      photoBefore.src = src;
+      if (key === 'custom') {
+        photoAfter.onload = () => {
+          photoFigure.style.aspectRatio = `${photoAfter.naturalWidth} / ${photoAfter.naturalHeight}`;
+          photoAfter.onload = null;
+        };
+      } else {
+        photoFigure.style.aspectRatio = '';
+      }
+      photoAfter.style.opacity = '1';
+    }, 110);
+    return;
+  }
+
   photoAfter.style.display = '';
   photoAfter.setAttribute('alt', 'Photo with recipe applied');
   photoAfter.src  = src;
@@ -364,11 +388,13 @@ Object.entries(navBtns).forEach(([key, btn]) => btn?.addEventListener('click', (
 document.getElementById('btn-header-recipe')?.addEventListener('click', () => openSheet('recipe'));
 document.getElementById('btn-header-options')?.addEventListener('click', () => openSheet('options'));
 
-// My Recipes header button
-document.getElementById('btn-my-recipes')?.addEventListener('click', () => {
+// "My Recipes" — header button (mobile) + in-sheet button (desktop Recipe sheet)
+function openMyRecipes() {
   renderRecipesSheet();
   openSheet('recipes');
-});
+}
+document.getElementById('btn-my-recipes')?.addEventListener('click', openMyRecipes);
+document.getElementById('btn-open-my-recipes')?.addEventListener('click', openMyRecipes);
 
 // ── My Recipes sheet ──────────────────────────────────────────────────────
 const recipesListContainer = document.getElementById('recipes-list-container');
@@ -543,7 +569,8 @@ function handleFilmSimClick(e) {
     return;
   }
 
-  state.filmSimId = card.dataset.id;
+  const simId = card.dataset.id;
+  state.filmSimId = simId;
   renderFilmSims();
   updatePreview();
 }
@@ -554,7 +581,8 @@ function handleFilmSimKeydown(e) {
   const card = e.target.closest('.film-sim-card');
   if (!card || card.dataset.gated === 'true') return;
   e.preventDefault();
-  state.filmSimId = card.dataset.id;
+  const simId = card.dataset.id;
+  state.filmSimId = simId;
   renderFilmSims();
   updatePreview();
 }
@@ -580,6 +608,7 @@ function handleParamInput(e) {
   if (valueEl) {
     valueEl.textContent = display;
     slider.setAttribute('aria-valuenow', val);
+    snapParamValue(valueEl);
   }
   // Mirror value to the other list
   const otherList = e.currentTarget === paramList ? paramListMobile : paramList;
@@ -587,7 +616,7 @@ function handleParamInput(e) {
   if (mirror) {
     mirror.value = val;
     const mirrorVal = mirror.closest('.param-row')?.querySelector('.param-value');
-    if (mirrorVal) mirrorVal.textContent = display;
+    if (mirrorVal) { mirrorVal.textContent = display; snapParamValue(mirrorVal); }
   }
   updatePreview();
   updateParamsBadge();
@@ -896,6 +925,17 @@ if (lightboxEl) {
   lightboxEl.addEventListener('touchend', e => {
     if (e.changedTouches[0].clientY - lbStartY > 80) closeLightbox();
   }, { passive: true });
+}
+
+// ── Delight helpers ───────────────────────────────────────────────────────
+
+// 3. Param value snap: brief scale overshoot when value text changes
+function snapParamValue(valueEl) {
+  if (!valueEl) return;
+  valueEl.classList.remove('is-snapping');
+  void valueEl.offsetWidth;
+  valueEl.classList.add('is-snapping');
+  valueEl.addEventListener('animationend', () => valueEl.classList.remove('is-snapping'), { once: true });
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────
