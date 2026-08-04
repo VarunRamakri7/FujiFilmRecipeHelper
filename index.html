@@ -80,7 +80,7 @@
             Recipe
           </button>
           <button class="btn btn-ghost" id="btn-header-options" aria-haspopup="dialog">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/><circle cx="8" cy="6" r="2.5" fill="currentColor" stroke="none"/><circle cx="16" cy="12" r="2.5" fill="currentColor" stroke="none"/><circle cx="10" cy="18" r="2.5" fill="currentColor" stroke="none"/></svg>
             Options
           </button>
         </div>
@@ -137,6 +137,11 @@
         <input type="file" id="custom-photo-input" accept="image/*" aria-label="Upload a custom photo" style="display:none">
       </div>
 
+      <div class="mobile-sim-chip" id="mobile-sim-chip" aria-live="polite">
+        <span class="sim-chip-swatch" aria-hidden="true"></span>
+        <span class="sim-chip-name"></span>
+      </div>
+
       <div class="filmstrip-frame">
         <figure class="photo-figure" id="photo-figure">
           <img class="photo-img photo-after" id="photo-after" src="" alt="Photo with recipe applied">
@@ -157,10 +162,17 @@
         </figure>
       </div>
 
+      <div class="disclaimer-inline" id="disclaimer-inline" hidden>
+        <span class="disclaimer-inline-text">Preview is an approximation. Actual in-camera results will differ.</span>
+        <button class="disclaimer-inline-close" aria-label="Dismiss">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
       <div class="preview-footer">
-        <button class="btn btn-ghost btn-reupload" id="btn-reupload" hidden>Upload ↑</button>
+        <button class="btn btn-ghost btn-reupload" id="btn-reupload" hidden>Replace photo</button>
         <button class="disclaimer-btn" id="btn-disclaimer" aria-label="About preview accuracy" aria-expanded="false">i</button>
-        <div class="disclaimer-popover" role="tooltip">Preview is an approximation. Actual in-camera results will differ.</div>
+        <div class="disclaimer-popover" role="note" aria-label="Preview accuracy note">Preview is an approximation. Actual in-camera results will differ.</div>
       </div>
 
       <div class="recipe-save">
@@ -240,8 +252,12 @@
     </button>
     <button class="mobile-nav-btn" id="mob-btn-options" aria-label="Open view options" aria-expanded="false">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="12" cy="12" r="3"/>
-        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+        <circle cx="8" cy="6" r="2.5" fill="currentColor" stroke="none"/>
+        <circle cx="16" cy="12" r="2.5" fill="currentColor" stroke="none"/>
+        <circle cx="10" cy="18" r="2.5" fill="currentColor" stroke="none"/>
       </svg>
       <span>Options</span>
     </button>
@@ -383,7 +399,12 @@
   <div class="modal-overlay" id="sensor-modal" role="dialog" aria-modal="true"
        aria-labelledby="sensor-modal-title" hidden>
     <div class="modal">
-      <h2 class="modal-title" id="sensor-modal-title">Choose Your Camera</h2>
+      <div class="modal-header">
+        <h2 class="modal-title" id="sensor-modal-title">Choose Your Camera</h2>
+        <button class="modal-close-btn" id="sensor-modal-close" aria-label="Close">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
       <p class="modal-subtitle">Select your X-Trans generation to see supported film simulations and parameters.</p>
       <div class="sensor-list" id="sensor-list"></div>
     </div>

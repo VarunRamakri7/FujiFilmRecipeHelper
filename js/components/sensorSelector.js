@@ -73,6 +73,9 @@ export function initSensorSelector(onSelect) {
     if (e.target === modal) close();
   });
 
+  // Close button
+  document.getElementById('sensor-modal-close')?.addEventListener('click', close);
+
   // Close on Escape
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && !modal.hidden) close();
