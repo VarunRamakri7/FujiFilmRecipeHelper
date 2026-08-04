@@ -180,7 +180,7 @@ function parametersHTML() {
       if (!param) return;
       const gated      = !isSupported(param.sensorMinGeneration, state.sensorId);
       const gatedAttr  = gated ? `data-tooltip="Not available on ${sensorLabel}" data-gated="true"` : '';
-      const grainSizeHidden = id === 'grainSize' && grainOff;
+      const grainSizeOff = id === 'grainSize' && grainOff;
 
       if (param.type === 'select') {
         const optButtons = param.options.map(opt => `
@@ -189,18 +189,14 @@ function parametersHTML() {
                   ${gated ? 'disabled' : ''}>${opt.label}</button>
         `).join('');
         const isGrainSize = id === 'grainSize';
-        const innerOpen  = isGrainSize ? '<div class="param-row-inner">' : '';
-        const innerClose = isGrainSize ? '</div>' : '';
         parts.push(`
-          <div class="param-row${gated ? ' is-gated' : ''}${isGrainSize ? ' param-row--grain-size' : ''}${grainSizeHidden ? ' is-grain-hidden' : ''}" data-id="${param.id}" ${gatedAttr}>
-            ${innerOpen}
+          <div class="param-row${gated ? ' is-gated' : ''}${isGrainSize ? ' param-row--grain-size' : ''}${grainSizeOff ? ' is-grain-off' : ''}" data-id="${param.id}" ${gatedAttr}>
             <div class="param-header">
               <span class="param-label">${param.label}</span>
               <button class="param-info" aria-label="About ${param.label}"
                       data-tooltip="${param.description}">i</button>
             </div>
             <div class="param-options" role="group" aria-label="${param.label}">${optButtons}</div>
-            ${innerClose}
           </div>`);
         return;
       }
@@ -607,10 +603,9 @@ function handleParamClick(e) {
     list?.querySelectorAll(`.param-option[data-param="${id}"]`).forEach(b => {
       b.classList.toggle('is-active', b.dataset.value === val);
     });
-    // Progressive disclosure: show/hide grain size when grain effect changes
     if (id === 'grainRoughness') {
       const grainSizeRow = list?.querySelector('.param-row--grain-size');
-      if (grainSizeRow) grainSizeRow.classList.toggle('is-grain-hidden', val === 'Off');
+      if (grainSizeRow) grainSizeRow.classList.toggle('is-grain-off', val === 'Off');
     }
   });
   updatePreview();

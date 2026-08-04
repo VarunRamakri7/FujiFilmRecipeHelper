@@ -256,20 +256,10 @@ body {
 }
 .param-section-label:first-child { border-top: none; }
 
-/* ─── Grain Size progressive disclosure ─────────────────── */
-.param-row--grain-size {
-  display: grid;
-  grid-template-rows: 1fr;
-  transition: grid-template-rows var(--t-base), opacity var(--t-base);
-  opacity: 1;
-}
-.param-row--grain-size.is-grain-hidden {
-  grid-template-rows: 0fr;
-  opacity: 0;
+/* ─── Grain Size dimmed when Grain Effect is Off ─────────── */
+.param-row--grain-size.is-grain-off {
+  opacity: 0.3;
   pointer-events: none;
-}
-.param-row--grain-size > .param-row-inner {
-  overflow: hidden;
 }
 
 /* ─── Parameter list ─────────────────────────────────────── */
