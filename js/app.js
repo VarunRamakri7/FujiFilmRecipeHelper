@@ -10,17 +10,11 @@ import { saveRecipe, loadRecipes, deleteRecipe, exportRecipe } from './utils/rec
 import { initMagnifier, setMagnifierEnabled } from './components/zoomLens.js';
 
 // ── State ──────────────────────────────────────────────────────────────────
-const WEBP_SUPPORTED = (() => {
-  const c = document.createElement('canvas');
-  return c.toDataURL('image/webp').startsWith('data:image/webp');
-})();
-const ext = WEBP_SUPPORTED ? 'webp' : 'jpg';
-
 const PHOTOS = {
-  landscape:    `assets/photos/stock-landscape.${ext}`,
-  architecture: `assets/photos/stock-wildlife.${ext}`,
-  color:        `assets/photos/stock-color.${ext}`,
-  people:       `assets/photos/stock-people.${ext}`,
+  landscape:    `assets/photos/stock-landscape.webp`,
+  architecture: `assets/photos/stock-wildlife.webp`,
+  color:        `assets/photos/stock-color.webp`,
+  people:       `assets/photos/stock-people.webp`,
 };
 
 const state = {
