@@ -10,6 +10,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600&family=Space+Mono&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/variables.css">
   <link rel="stylesheet" href="css/styles.css">
+  <!-- Prevent light-mode flash: sync theme before first paint -->
+  <script>
+    (function(){var t=localStorage.getItem('fuji-theme')||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.setAttribute('data-theme',t);})();
+  </script>
 
   <!-- SVG grain filters -->
   <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
@@ -143,7 +147,7 @@
       </div>
 
       <div class="filmstrip-frame">
-        <figure class="photo-figure" id="photo-figure">
+        <figure class="photo-figure" id="photo-figure" tabindex="-1">
           <img class="photo-img photo-after" id="photo-after" src="" alt="Photo with recipe applied">
           <div class="custom-upload-prompt" id="custom-upload-prompt" hidden>
             <button class="custom-upload-btn" id="btn-trigger-upload" aria-label="Upload a photo">
