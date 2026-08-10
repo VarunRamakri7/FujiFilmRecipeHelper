@@ -36,12 +36,13 @@ export function initSensorSelector(onSelect) {
       btn.classList.toggle('is-active', btn.dataset.id === active);
     });
     modal.hidden = false;
-    // Focus first button for keyboard users
+    document.body.classList.add('sensor-modal-open');
     list.querySelector('.sensor-btn')?.focus();
   }
 
   function close() {
     modal.hidden = true;
+    document.body.classList.remove('sensor-modal-open');
     btnSensor.focus();
   }
 

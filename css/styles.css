@@ -772,6 +772,11 @@ body {
   width: max-content;
 }
 
+body.sensor-modal-open .mobile-nav {
+  pointer-events: none;
+  opacity: 0;
+}
+
 .mobile-nav-divider {
   width: 1px;
   height: 24px;

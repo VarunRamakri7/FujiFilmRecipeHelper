@@ -143,7 +143,7 @@ function filmSimHTML() {
 
   parts.push(`<div class="film-sim-section-label" role="presentation">Color</div>`);
   colorSims.forEach(sim => parts.push(renderCard(sim)));
-  parts.push(`<div class="film-sim-section-label" role="presentation">Black &amp; White</div>`);
+  parts.push(`<div class="film-sim-section-label" role="presentation">Monochrome</div>`);
   bwSims.forEach(sim => parts.push(renderCard(sim)));
 
   return parts.join('');
