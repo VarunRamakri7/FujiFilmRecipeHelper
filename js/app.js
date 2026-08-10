@@ -2,17 +2,17 @@ import { FILM_SIMS }          from './data/filmSimulations.js';
 import { PARAMETERS }         from './data/parameters.js';
 import { SENSOR_GENERATIONS } from './data/sensorGenerations.js';
 import { initSensorSelector, getSensorGeneration, isSupported } from './components/sensorSelector.js';
-import { initTooltips }       from './components/tooltip.js';
+import { initTooltips, unpinTooltip } from './components/tooltip.js';
 import { buildFilter }        from './utils/buildFilter.js';
 import { initComparisonSlider } from './components/comparisonSlider.js';
 import { exportCard }          from './utils/exportCard.js';
-import { saveRecipe }    from './utils/recipes.js';
+import { saveRecipe, loadRecipes, deleteRecipe, exportRecipe } from './utils/recipes.js';
 import { initMagnifier, setMagnifierEnabled } from './components/zoomLens.js';
 
 // ── State ──────────────────────────────────────────────────────────────────
 const PHOTOS = {
   landscape:    'assets/photos/stock-landscape.jpg',
-  architecture: 'assets/photos/stock-architecture.jpg',
+  architecture: 'assets/photos/stock-wildlife.jpg',
   color:        'assets/photos/stock-color.jpg',
   people:       'assets/photos/stock-people.jpg',
 };
@@ -47,89 +47,191 @@ const photoFigure       = document.getElementById('photo-figure');
 const comparisonOverlay = document.getElementById('comparison-overlay');
 const toggleComparison  = document.getElementById('toggle-comparison');
 const btnReupload       = document.getElementById('btn-reupload');
+const panelSimSubtitle  = document.getElementById('panel-sim-subtitle');
+const panelParamsBadge  = document.getElementById('panel-params-badge');
+const panelParamsBadgeMobile = document.getElementById('panel-params-badge-mobile');
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+const toastContainer = document.getElementById('toast-container');
+
+function showToast(message, type = '', duration = 2500) {
+  const el = document.createElement('div');
+  el.className = `toast${type ? ` toast--${type}` : ''}`;
+  el.textContent = message;
+  toastContainer.appendChild(el);
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('is-visible')));
+  setTimeout(() => {
+    el.classList.remove('is-visible');
+    el.addEventListener('transitionend', () => el.remove(), { once: true });
+  }, duration);
+}
+
+// ── Modified-params badge ──────────────────────────────────────────────────
+function countModifiedParams() {
+  return PARAMETERS.reduce((n, p) => {
+    const cur = state.params[p.id];
+    const def = p.default;
+    return n + (cur !== def ? 1 : 0);
+  }, 0);
+}
+
+function updateParamsBadge() {
+  const n = countModifiedParams();
+  const show = n > 0;
+  [panelParamsBadge, panelParamsBadgeMobile].forEach(el => {
+    if (!el) return;
+    el.textContent = String(n);
+    el.classList.toggle('is-visible', show);
+  });
+  // Also update the Adjust pill nav button label on mobile
+  const adjBtn = document.getElementById('mob-btn-params');
+  if (adjBtn) {
+    const span = adjBtn.querySelector('span');
+    if (span) span.textContent = show ? `Adjust · ${n}` : 'Adjust';
+  }
+}
+
+// ── Active sim indicator (desktop subtitle + mobile chip) ──────────────────
+const mobileSimChip = document.getElementById('mobile-sim-chip');
+
+function updateSimSubtitle() {
+  const sim = FILM_SIMS.find(s => s.id === state.filmSimId);
+  if (!sim) return;
+  if (panelSimSubtitle) {
+    panelSimSubtitle.textContent = sim.shortName;
+    panelSimSubtitle.classList.add('is-visible');
+  }
+  if (mobileSimChip) {
+    mobileSimChip.querySelector('.sim-chip-name').textContent = sim.shortName;
+    mobileSimChip.querySelector('.sim-chip-swatch').style.setProperty('--chip-color', sim.accentColor);
+    mobileSimChip.classList.add('is-visible');
+  }
+}
 
 // ── Render: film sim cards ─────────────────────────────────────────────────
+const BW_SIM_IDS = new Set(['monochrome', 'sepia', 'acros', 'acros-ye', 'acros-r', 'acros-g']);
+
 function filmSimHTML() {
   const gen = SENSOR_GENERATIONS.find(g => g.id === state.sensorId);
   const supported = new Set(gen?.supportedSimIds ?? []);
 
-  return FILM_SIMS.map(sim => {
+  const colorSims = FILM_SIMS.filter(s => !BW_SIM_IDS.has(s.id));
+  const bwSims    = FILM_SIMS.filter(s =>  BW_SIM_IDS.has(s.id));
+  const parts = [];
+
+  const renderCard = sim => {
     const gated   = !supported.has(sim.id);
     const active  = sim.id === state.filmSimId && !gated;
     const subName = sim.name.split('/').slice(1).join('/');
-
-    return `<button
+    return `<div
       class="film-sim-card${active ? ' is-active' : ''}${gated ? ' is-gated' : ''}"
       role="radio"
       aria-checked="${active}"
       data-id="${sim.id}"
-      ${gated ? `data-tooltip="Not available on ${gen?.label ?? 'your sensor'}"` : `data-tooltip="${sim.description}"`}
-      ${gated ? 'tabindex="-1"' : ''}
+      ${gated ? 'data-gated="true"' : ''}
+      tabindex="${gated ? '-1' : '0'}"
     >
       <div class="card-swatch" style="--swatch:${sim.accentColor}"></div>
       <span class="card-short">${sim.shortName}</span>
       ${subName ? `<span class="card-name">${subName}</span>` : ''}
-    </button>`;
-  }).join('');
+      <button class="card-info-btn" aria-label="About ${sim.shortName}"
+              data-tooltip="${gated ? `Not available on ${gen?.label ?? 'your sensor'}` : sim.description}"
+              tabindex="${gated ? '-1' : '0'}"
+              aria-hidden="${gated ? 'true' : 'false'}">i</button>
+    </div>`;
+  };
+
+  parts.push(`<div class="film-sim-section-label" role="presentation">Color</div>`);
+  colorSims.forEach(sim => parts.push(renderCard(sim)));
+  parts.push(`<div class="film-sim-section-label" role="presentation">Black &amp; White</div>`);
+  bwSims.forEach(sim => parts.push(renderCard(sim)));
+
+  return parts.join('');
 }
 
 function renderFilmSims() {
+  unpinTooltip(); // clear any open tooltip before the DOM is replaced
   const html = filmSimHTML();
   if (filmSimGrid) filmSimGrid.innerHTML = html;
   if (filmSimGridMobile) filmSimGridMobile.innerHTML = html;
+  updateSimSubtitle();
 }
 
 // ── Render: parameters ────────────────────────────────────────────────────
+const PARAM_SECTIONS = [
+  { label: 'Tone',          ids: ['highlightTone', 'shadowTone'] },
+  { label: 'Color',         ids: ['color', 'colorChromeEffect', 'colorChromeBlue'] },
+  { label: 'Grain',         ids: ['grainRoughness', 'grainSize'] },
+  { label: 'Detail',        ids: ['sharpness', 'noiseReduction', 'clarity'] },
+];
+
 function parametersHTML() {
   const sensorLabel = SENSOR_GENERATIONS.find(g => g.id === state.sensorId)?.label ?? 'your sensor';
-  return PARAMETERS.map(param => {
-    const gated      = !isSupported(param.sensorMinGeneration, state.sensorId);
-    const gatedAttr  = gated ? `data-tooltip="Not available on ${sensorLabel}"` : '';
+  const grainOff = state.params.grainRoughness === 'Off';
 
-    if (param.type === 'select') {
-      const optButtons = param.options.map(opt => `
-        <button class="param-option${state.params[param.id] === opt.value ? ' is-active' : ''}"
-                data-param="${param.id}" data-value="${opt.value}"
-                ${gated ? 'disabled' : ''}>${opt.label}</button>
-      `).join('');
-      return `
+  const byId = Object.fromEntries(PARAMETERS.map(p => [p.id, p]));
+  const parts = [];
+
+  PARAM_SECTIONS.forEach(section => {
+    parts.push(`<div class="param-section-label" role="presentation">${section.label}</div>`);
+
+    section.ids.forEach(id => {
+      const param = byId[id];
+      if (!param) return;
+      const gated      = !isSupported(param.sensorMinGeneration, state.sensorId);
+      const gatedAttr  = gated ? `data-tooltip="Not available on ${sensorLabel}" data-gated="true"` : '';
+      const grainSizeOff = id === 'grainSize' && grainOff;
+
+      if (param.type === 'select') {
+        const optButtons = param.options.map(opt => `
+          <button class="param-option${state.params[param.id] === opt.value ? ' is-active' : ''}"
+                  data-param="${param.id}" data-value="${opt.value}"
+                  ${gated ? 'disabled' : ''}>${opt.label}</button>
+        `).join('');
+        const isGrainSize = id === 'grainSize';
+        parts.push(`
+          <div class="param-row${gated ? ' is-gated' : ''}${isGrainSize ? ' param-row--grain-size' : ''}${grainSizeOff ? ' is-grain-off' : ''}" data-id="${param.id}" ${gatedAttr}>
+            <div class="param-header">
+              <span class="param-label">${param.label}</span>
+              <button class="param-info" aria-label="About ${param.label}"
+                      data-tooltip="${param.description}">i</button>
+            </div>
+            <div class="param-options" role="group" aria-label="${param.label}">${optButtons}</div>
+          </div>`);
+        return;
+      }
+
+      const val  = state.params[param.id];
+      const display = val > 0 ? `+${val}` : `${val}`;
+      const [min, max] = param.range;
+      parts.push(`
         <div class="param-row${gated ? ' is-gated' : ''}" data-id="${param.id}" ${gatedAttr}>
           <div class="param-header">
-            <span class="param-label">${param.label}</span>
+            <label class="param-label" for="p-${param.id}">${param.label}</label>
             <button class="param-info" aria-label="About ${param.label}"
                     data-tooltip="${param.description}">i</button>
+            <span class="param-value" aria-live="polite">${display}</span>
           </div>
-          <div class="param-options" role="group" aria-label="${param.label}">${optButtons}</div>
-        </div>`;
-    }
+          <input class="param-slider" type="range"
+                 id="p-${param.id}" data-param="${param.id}"
+                 min="${min}" max="${max}" value="${val}" step="${param.step ?? 1}"
+                 ${gated ? 'disabled' : ''}
+                 aria-label="${param.label}" aria-valuemin="${min}" aria-valuemax="${max}" aria-valuenow="${val}">
+          <div class="param-ticks" aria-hidden="true">
+            <span>${min}</span><span class="tick-zero" style="--zero-pct:${(-min / (max - min)).toFixed(4)}">0</span><span>+${max}</span>
+          </div>
+        </div>`);
+    });
+  });
 
-    const val  = state.params[param.id];
-    const display = val > 0 ? `+${val}` : `${val}`;
-    const [min, max] = param.range;
-    return `
-      <div class="param-row${gated ? ' is-gated' : ''}" data-id="${param.id}" ${gatedAttr}>
-        <div class="param-header">
-          <label class="param-label" for="p-${param.id}">${param.label}</label>
-          <button class="param-info" aria-label="About ${param.label}"
-                  data-tooltip="${param.description}">i</button>
-          <span class="param-value" aria-live="polite">${display}</span>
-        </div>
-        <input class="param-slider" type="range"
-               id="p-${param.id}" data-param="${param.id}"
-               min="${min}" max="${max}" value="${val}" step="${param.step ?? 1}"
-               ${gated ? 'disabled' : ''}
-               aria-label="${param.label}" aria-valuemin="${min}" aria-valuemax="${max}" aria-valuenow="${val}">
-        <div class="param-ticks" aria-hidden="true">
-          <span>${min}</span><span class="tick-zero" style="--zero-pct:${(-min / (max - min)).toFixed(4)}">0</span><span>+${max}</span>
-        </div>
-      </div>`;
-  }).join('');
+  return parts.join('');
 }
 
 function renderParameters() {
   const html = parametersHTML();
   if (paramList) paramList.innerHTML = html;
   if (paramListMobile) paramListMobile.innerHTML = html;
+  updateParamsBadge();
 }
 
 // ── Update preview ────────────────────────────────────────────────────────
@@ -145,6 +247,30 @@ let customBlobUrl = null;
 function setPhoto(key) {
   const src = key === 'custom' ? customBlobUrl : PHOTOS[key];
   if (!src) return;
+
+  // Delight: crossfade between test photos
+  const isSwitch = photoAfter.src && !photoAfter.src.endsWith('/') && photoAfter.style.display !== 'none';
+  if (isSwitch) {
+    photoAfter.style.opacity = '0';
+    setTimeout(() => {
+      photoAfter.style.display = '';
+      photoAfter.setAttribute('alt', 'Photo with recipe applied');
+      photoAfter.src  = src;
+      photoBefore.setAttribute('alt', 'Original photo');
+      photoBefore.src = src;
+      if (key === 'custom') {
+        photoAfter.onload = () => {
+          photoFigure.style.aspectRatio = `${photoAfter.naturalWidth} / ${photoAfter.naturalHeight}`;
+          photoAfter.onload = null;
+        };
+      } else {
+        photoFigure.style.aspectRatio = '';
+      }
+      photoAfter.style.opacity = '1';
+    }, 110);
+    return;
+  }
+
   photoAfter.style.display = '';
   photoAfter.setAttribute('alt', 'Photo with recipe applied');
   photoAfter.src  = src;
@@ -161,6 +287,20 @@ function setPhoto(key) {
   }
 }
 
+// ── Focus trap ────────────────────────────────────────────────────────────
+const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select,textarea,[tabindex]:not([tabindex="-1"])';
+
+function trapFocus(container, e) {
+  const els = [...container.querySelectorAll(FOCUSABLE)].filter(el => !el.closest('[hidden]'));
+  if (!els.length) return;
+  const first = els[0], last = els[els.length - 1];
+  if (e.shiftKey && document.activeElement === first) {
+    e.preventDefault(); last.focus();
+  } else if (!e.shiftKey && document.activeElement === last) {
+    e.preventDefault(); first.focus();
+  }
+}
+
 // ── Bottom sheet manager ──────────────────────────────────────────────────
 const backdrop   = document.getElementById('sheet-backdrop');
 const sheets     = {
@@ -168,6 +308,7 @@ const sheets     = {
   params:  document.getElementById('sheet-params'),
   recipe:  document.getElementById('sheet-recipe'),
   options: document.getElementById('sheet-options'),
+  recipes: document.getElementById('sheet-recipes'),
 };
 const navBtns = {
   film:    document.getElementById('mob-btn-film'),
@@ -176,6 +317,7 @@ const navBtns = {
   options: document.getElementById('mob-btn-options'),
 };
 let activeSheet = null;
+let activeTrapHandler = null;
 
 function openSheet(key) {
   if (activeSheet === key) { closeSheet(); return; }
@@ -189,8 +331,15 @@ function openSheet(key) {
   requestAnimationFrame(() => {
     backdrop.classList.add('is-visible');
     sheet.hidden = false;
-    requestAnimationFrame(() => sheet.classList.add('is-open'));
+    requestAnimationFrame(() => {
+      sheet.classList.add('is-open');
+      const first = sheet.querySelector(FOCUSABLE);
+      if (first) first.focus();
+    });
   });
+
+  activeTrapHandler = e => { if (e.key === 'Tab') trapFocus(sheet, e); };
+  sheet.addEventListener('keydown', activeTrapHandler);
 
   Object.entries(navBtns).forEach(([k, btn]) => {
     if (btn) btn.classList.toggle('is-active', k === key);
@@ -204,6 +353,8 @@ function closeSheet(restoreAria = true) {
   if (!activeSheet) return;
   const sheet = sheets[activeSheet];
   if (sheet) {
+    if (activeTrapHandler) sheet.removeEventListener('keydown', activeTrapHandler);
+    activeTrapHandler = null;
     sheet.classList.remove('is-open');
     sheet.addEventListener('transitionend', () => { sheet.hidden = true; }, { once: true });
   }
@@ -233,16 +384,217 @@ document.querySelectorAll('.sheet-close').forEach(btn => {
 // Nav button click handlers
 Object.entries(navBtns).forEach(([key, btn]) => btn?.addEventListener('click', () => openSheet(key)));
 
+// Desktop header Recipe + Options buttons wire to the same sheets
+document.getElementById('btn-header-recipe')?.addEventListener('click', () => openSheet('recipe'));
+document.getElementById('btn-header-options')?.addEventListener('click', () => openSheet('options'));
+
+// "My Recipes" — header button (mobile) + in-sheet button (desktop Recipe sheet)
+function openMyRecipes() {
+  renderRecipesSheet();
+  openSheet('recipes');
+}
+document.getElementById('btn-my-recipes')?.addEventListener('click', openMyRecipes);
+document.getElementById('btn-open-my-recipes')?.addEventListener('click', openMyRecipes);
+
+// ── My Recipes sheet ──────────────────────────────────────────────────────
+const recipesListContainer = document.getElementById('recipes-list-container');
+
+function formatRecipeText(recipe) {
+  const sim = FILM_SIMS.find(s => s.id === recipe.filmSimId);
+  const gen = SENSOR_GENERATIONS.find(g => g.id === recipe.sensorId);
+  const lines = [
+    `Recipe: ${recipe.name}`,
+    `Film Sim: ${sim?.shortName ?? recipe.filmSimId}`,
+    gen ? `Sensor: ${gen.label}` : null,
+    '',
+    ...PARAMETERS.map(p => {
+      const val = recipe.params[p.id];
+      return val !== undefined ? `${p.label}: ${val}` : null;
+    }).filter(Boolean),
+  ].filter(l => l !== null);
+  return lines.join('\n');
+}
+
+function renderRecipesSheet() {
+  if (!recipesListContainer) return;
+  const recipes = loadRecipes();
+  if (!recipes.length) {
+    recipesListContainer.innerHTML = `
+      <div class="recipes-empty">
+        <svg class="recipes-empty-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/>
+          <polyline points="7 3 7 8 15 8"/>
+        </svg>
+        <span class="recipes-empty-title">No saved recipes yet</span>
+        <span class="recipes-empty-sub">Save a recipe using the Recipe panel, then find it here.</span>
+      </div>`;
+    return;
+  }
+
+  recipesListContainer.innerHTML = recipes.map(recipe => {
+    const sim = FILM_SIMS.find(s => s.id === recipe.filmSimId);
+    const gen = SENSOR_GENERATIONS.find(g => g.id === recipe.sensorId);
+    const date = recipe.createdAt ? new Date(recipe.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '';
+    const meta = [sim?.shortName, gen?.label, date].filter(Boolean).join(' · ');
+    return `<div class="recipe-card" data-recipe-id="${recipe.id}">
+      <div class="recipe-card-info">
+        <span class="recipe-card-name">${recipe.name}</span>
+        <span class="recipe-card-meta">${meta}</span>
+      </div>
+      <div class="recipe-card-actions">
+        <button class="recipe-action-btn recipe-action-btn--load" data-action="load" data-recipe-id="${recipe.id}" aria-label="Load ${recipe.name}" title="Load recipe">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="5 12 12 5 19 12"/><line x1="12" y1="5" x2="12" y2="19"/></svg>
+        </button>
+        <button class="recipe-action-btn" data-action="copy" data-recipe-id="${recipe.id}" aria-label="Copy ${recipe.name}" title="Copy as text">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+        <button class="recipe-action-btn" data-action="export" data-recipe-id="${recipe.id}" aria-label="Export ${recipe.name}" title="Export as JSON">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+        <button class="recipe-action-btn recipe-action-btn--delete" data-action="delete" data-recipe-id="${recipe.id}" aria-label="Delete ${recipe.name}" title="Delete recipe">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+if (recipesListContainer) {
+  recipesListContainer.addEventListener('click', e => {
+    const btn = e.target.closest('[data-action][data-recipe-id]');
+    if (!btn) return;
+    const id = btn.dataset.recipeId;
+    const action = btn.dataset.action;
+    const recipes = loadRecipes();
+    const recipe = recipes.find(r => r.id === id);
+    if (!recipe && action !== 'delete') return;
+
+    if (action === 'load') {
+      state.filmSimId = recipe.filmSimId;
+      state.params = { ...recipe.params };
+      if (recipe.sensorId) state.sensorId = recipe.sensorId;
+      renderFilmSims();
+      renderParameters();
+      updatePreview();
+      closeSheet();
+      showToast(`"${recipe.name}" loaded`, 'success');
+    } else if (action === 'delete') {
+      // Optimistic UI: remove card immediately, undo within 5s
+      const card = recipesListContainer.querySelector(`[data-recipe-id="${id}"]`);
+      if (card) { card.style.opacity = '0'; card.style.pointerEvents = 'none'; }
+      let undone = false;
+      const undoToast = document.createElement('div');
+      undoToast.className = 'toast toast--undo';
+      undoToast.innerHTML = `Deleted · <button class="toast-undo-btn">Undo</button>`;
+      toastContainer.appendChild(undoToast);
+      requestAnimationFrame(() => requestAnimationFrame(() => undoToast.classList.add('is-visible')));
+      const undoBtn = undoToast.querySelector('.toast-undo-btn');
+      const dismiss = () => {
+        undoToast.classList.remove('is-visible');
+        undoToast.addEventListener('transitionend', () => undoToast.remove(), { once: true });
+      };
+      undoBtn.addEventListener('click', () => {
+        undone = true;
+        if (card) { card.style.opacity = ''; card.style.pointerEvents = ''; }
+        dismiss();
+      });
+      setTimeout(() => {
+        if (!undone) { deleteRecipe(id); renderRecipesSheet(); }
+        dismiss();
+      }, 5000);
+    } else if (action === 'export') {
+      exportRecipe(id);
+      showToast('Recipe JSON saved');
+    } else if (action === 'copy') {
+      const text = formatRecipeText(recipe);
+      navigator.clipboard.writeText(text).then(
+        () => showToast('Copied to clipboard', 'success'),
+        () => showToast('Copy failed — try again', 'warning'),
+      );
+    }
+  });
+}
+
+// ── Swipe-to-dismiss on bottom sheets ─────────────────────────────────────
+(function initSwipeToDismiss() {
+  let startY = 0, startScrollTop = 0, dragging = false;
+
+  document.addEventListener('touchstart', e => {
+    if (!activeSheet) return;
+    const sheet = sheets[activeSheet];
+    if (!sheet || !sheet.contains(e.target)) return;
+    const body = sheet.querySelector('.sheet-body');
+    startScrollTop = body ? body.scrollTop : 0;
+    startY = e.touches[0].clientY;
+    dragging = true;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', e => {
+    if (!dragging || !activeSheet) return;
+    const sheet = sheets[activeSheet];
+    if (!sheet) return;
+    const dy = e.touches[0].clientY - startY;
+    if (dy > 0 && startScrollTop === 0) {
+      sheet.style.transform = `translateX(-50%) translateY(${Math.min(dy * 0.6, 120)}px)`;
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchend', e => {
+    if (!dragging || !activeSheet) return;
+    dragging = false;
+    const sheet = sheets[activeSheet];
+    if (!sheet) return;
+    const dy = e.changedTouches[0].clientY - startY;
+    sheet.style.transform = '';
+    if (dy > 80) closeSheet();
+  }, { passive: true });
+})();
+
 // ── Event delegation: film sim grid (desktop + mobile) ────────────────────
 function handleFilmSimClick(e) {
-  const card = e.target.closest('.film-sim-card:not(.is-gated)');
+  // Let info button clicks pass through to tooltip; don't select the sim
+  if (e.target.closest('.card-info-btn')) return;
+
+  const card = e.target.closest('.film-sim-card');
   if (!card) return;
-  state.filmSimId = card.dataset.id;
+
+  // Gated: flash feedback instead of silent ignore
+  if (card.dataset.gated === 'true') {
+    const needed = FILM_SIMS.find(s => s.id === card.dataset.id)?.sensorMinGeneration;
+    const neededLabel = SENSOR_GENERATIONS.find(g => g.id === needed)?.label ?? 'a newer sensor';
+    showToast(`Requires ${neededLabel} — change sensor to unlock`, 'warning', 3000);
+    card.classList.add('gated-flash');
+    card.addEventListener('animationend', () => card.classList.remove('gated-flash'), { once: true });
+    return;
+  }
+
+  const simId = card.dataset.id;
+  state.filmSimId = simId;
   renderFilmSims();
   updatePreview();
 }
-if (filmSimGrid) filmSimGrid.addEventListener('click', handleFilmSimClick);
-if (filmSimGridMobile) filmSimGridMobile.addEventListener('click', handleFilmSimClick);
+
+function handleFilmSimKeydown(e) {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  if (e.target.closest('.card-info-btn')) return;
+  const card = e.target.closest('.film-sim-card');
+  if (!card || card.dataset.gated === 'true') return;
+  e.preventDefault();
+  const simId = card.dataset.id;
+  state.filmSimId = simId;
+  renderFilmSims();
+  updatePreview();
+}
+
+if (filmSimGrid) {
+  filmSimGrid.addEventListener('click', handleFilmSimClick);
+  filmSimGrid.addEventListener('keydown', handleFilmSimKeydown);
+}
+if (filmSimGridMobile) {
+  filmSimGridMobile.addEventListener('click', handleFilmSimClick);
+  filmSimGridMobile.addEventListener('keydown', handleFilmSimKeydown);
+}
 
 // ── Event delegation: parameters (desktop + mobile) ───────────────────────
 function handleParamInput(e) {
@@ -256,6 +608,7 @@ function handleParamInput(e) {
   if (valueEl) {
     valueEl.textContent = display;
     slider.setAttribute('aria-valuenow', val);
+    snapParamValue(valueEl);
   }
   // Mirror value to the other list
   const otherList = e.currentTarget === paramList ? paramListMobile : paramList;
@@ -263,9 +616,10 @@ function handleParamInput(e) {
   if (mirror) {
     mirror.value = val;
     const mirrorVal = mirror.closest('.param-row')?.querySelector('.param-value');
-    if (mirrorVal) mirrorVal.textContent = display;
+    if (mirrorVal) { mirrorVal.textContent = display; snapParamValue(mirrorVal); }
   }
   updatePreview();
+  updateParamsBadge();
 }
 
 function handleParamClick(e) {
@@ -278,17 +632,34 @@ function handleParamClick(e) {
     list?.querySelectorAll(`.param-option[data-param="${id}"]`).forEach(b => {
       b.classList.toggle('is-active', b.dataset.value === val);
     });
+    if (id === 'grainRoughness') {
+      const grainSizeRow = list?.querySelector('.param-row--grain-size');
+      if (grainSizeRow) grainSizeRow.classList.toggle('is-grain-off', val === 'Off');
+    }
   });
   updatePreview();
+  updateParamsBadge();
+}
+
+// Gated param-row tap feedback on mobile
+function handleParamRowClick(e) {
+  const row = e.target.closest('.param-row[data-gated="true"]');
+  if (!row) return;
+  const sensorLabel = SENSOR_GENERATIONS.find(g => g.id === state.sensorId)?.label ?? 'your sensor';
+  showToast(`This parameter requires a newer sensor than ${sensorLabel}`, 'warning', 3000);
+  row.classList.add('gated-flash');
+  row.addEventListener('animationend', () => row.classList.remove('gated-flash'), { once: true });
 }
 
 if (paramList) {
   paramList.addEventListener('input', handleParamInput);
   paramList.addEventListener('click', handleParamClick);
+  paramList.addEventListener('click', handleParamRowClick);
 }
 if (paramListMobile) {
   paramListMobile.addEventListener('input', handleParamInput);
   paramListMobile.addEventListener('click', handleParamClick);
+  paramListMobile.addEventListener('click', handleParamRowClick);
 }
 
 // ── Photo picker ──────────────────────────────────────────────────────────
@@ -356,8 +727,11 @@ customPhotoInput.addEventListener('change', () => {
 function onSensorChange(newId) {
   state.sensorId = newId;
   const gen = SENSOR_GENERATIONS.find(g => g.id === newId);
-  if (gen && !gen.supportedSimIds.includes(state.filmSimId)) {
+  const simWasSupported = gen?.supportedSimIds.includes(state.filmSimId);
+  if (gen && !simWasSupported) {
+    const oldSim = FILM_SIMS.find(s => s.id === state.filmSimId);
     state.filmSimId = 'provia';
+    showToast(`${oldSim?.shortName ?? 'Film sim'} isn't available on ${gen.label} — switched to PROVIA`, 'warning', 4000);
   }
   renderFilmSims();
   renderParameters();
@@ -365,8 +739,13 @@ function onSensorChange(newId) {
 }
 
 // ── Magnifier toggle ──────────────────────────────────────────────────────
+let magnifierActive = false;
 document.getElementById('toggle-magnifier').addEventListener('change', e => {
-  setMagnifierEnabled(e.target.checked);
+  magnifierActive = e.target.checked;
+  setMagnifierEnabled(magnifierActive);
+  if (magnifierActive) {
+    showToast('Magnifier on — tap to expand is disabled', '', 3000);
+  }
 });
 
 // ── Comparison toggle ─────────────────────────────────────────────────────
@@ -382,26 +761,54 @@ toggleComparison.addEventListener('change', () => {
 });
 
 // ── Reset parameters only (params sheet) ─────────────────────────────────
-function doResetParams() {
+function doResetParams(silent = false) {
   PARAMETERS.forEach(p => { state.params[p.id] = p.default; });
   renderParameters();
   updatePreview();
+  if (!silent) showToast('Parameters reset');
 }
-document.getElementById('btn-reset-params-mobile').addEventListener('click', doResetParams);
+document.getElementById('btn-reset-params-mobile').addEventListener('click', () => doResetParams());
 
-// ── Reset all (film sim + params) ─────────────────────────────────────────
+// ── Reset all (film sim + params) — two-step confirm ──────────────────────
 function doReset() {
   state.filmSimId = 'provia';
-  doResetParams();
+  doResetParams(true);
   renderFilmSims();
+  showToast('Recipe reset to defaults');
 }
-document.getElementById('btn-reset').addEventListener('click', doReset);
-document.getElementById('btn-reset-mobile').addEventListener('click', doReset);
+
+function wireResetAllConfirm(btnId) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  let confirmTimeout = null;
+  btn.addEventListener('click', () => {
+    if (btn.dataset.confirming === 'true') {
+      clearTimeout(confirmTimeout);
+      btn.dataset.confirming = 'false';
+      btn.textContent = btn.dataset.originalText;
+      btn.classList.remove('is-confirming');
+      doReset();
+    } else {
+      btn.dataset.originalText = btn.textContent;
+      btn.dataset.confirming = 'true';
+      btn.textContent = 'Confirm reset?';
+      btn.classList.add('is-confirming');
+      confirmTimeout = setTimeout(() => {
+        btn.dataset.confirming = 'false';
+        btn.textContent = btn.dataset.originalText;
+        btn.classList.remove('is-confirming');
+      }, 3000);
+    }
+  });
+}
+wireResetAllConfirm('btn-reset');
+wireResetAllConfirm('btn-reset-mobile');
 
 // ── Export card (desktop + mobile) ────────────────────────────────────────
 function doExport() {
   const gen = SENSOR_GENERATIONS.find(g => g.id === state.sensorId);
   exportCard(state.filmSimId, state.params, gen?.label ?? '');
+  showToast('Recipe card saved to downloads');
 }
 document.getElementById('btn-export-card').addEventListener('click', doExport);
 document.getElementById('btn-export-card-mobile').addEventListener('click', doExport);
@@ -413,11 +820,42 @@ function doSave(nameInputId) {
   if (!name) { input?.focus(); return; }
   saveRecipe({ name, filmSimId: state.filmSimId, params: { ...state.params }, sensorId: state.sensorId });
   if (input) input.value = '';
+  showToast(`"${name}" saved`, 'success');
 }
 document.getElementById('btn-save').addEventListener('click', () => doSave('recipe-name'));
 document.getElementById('btn-save-mobile').addEventListener('click', () => doSave('recipe-name-mobile'));
 
-// ── Theme toggle (desktop FAB + mobile nav) ───────────────────────────────
+// ── Disclaimer icon toggle + first-session inline banner ─────────────────
+const disclaimerBtn = document.getElementById('btn-disclaimer');
+const disclaimerInline = document.getElementById('disclaimer-inline');
+
+if (disclaimerBtn) {
+  disclaimerBtn.addEventListener('click', () => {
+    const expanded = disclaimerBtn.getAttribute('aria-expanded') === 'true';
+    disclaimerBtn.setAttribute('aria-expanded', String(!expanded));
+  });
+  document.addEventListener('click', e => {
+    if (!disclaimerBtn.contains(e.target)) {
+      disclaimerBtn.setAttribute('aria-expanded', 'false');
+    }
+  });
+}
+
+// Show inline disclaimer banner on first session visit
+if (disclaimerInline && !sessionStorage.getItem('disclaimer-seen')) {
+  disclaimerInline.hidden = false;
+  requestAnimationFrame(() => requestAnimationFrame(() => disclaimerInline.classList.add('is-visible')));
+  const closeBtn = disclaimerInline.querySelector('.disclaimer-inline-close');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      disclaimerInline.classList.remove('is-visible');
+      disclaimerInline.addEventListener('transitionend', () => { disclaimerInline.hidden = true; }, { once: true });
+      sessionStorage.setItem('disclaimer-seen', '1');
+    });
+  }
+}
+
+// ── Theme toggle (desktop header + FAB) ──────────────────────────────────
 const THEME_KEY = 'fuji-theme';
 const htmlEl    = document.documentElement;
 
@@ -438,6 +876,66 @@ if (savedTheme) {
   applyTheme(savedTheme);
 } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
   applyTheme('light');
+}
+
+// ── Photo lightbox ────────────────────────────────────────────────────────
+const lightboxEl  = document.getElementById('photo-lightbox');
+const lightboxImg = document.getElementById('lightbox-img');
+
+function openLightbox() {
+  if (!lightboxEl || !lightboxImg) return;
+  if (!photoAfter.src || photoAfter.style.display === 'none') return;
+  lightboxImg.src = photoAfter.src;
+  lightboxImg.style.filter = photoAfter.style.filter;
+  lightboxEl.removeAttribute('hidden');
+  requestAnimationFrame(() => requestAnimationFrame(() => lightboxEl.classList.add('is-open')));
+  document.addEventListener('keydown', onLightboxKey);
+}
+
+function closeLightbox() {
+  if (!lightboxEl) return;
+  lightboxEl.classList.remove('is-open');
+  lightboxEl.addEventListener('transitionend', () => {
+    lightboxEl.hidden = true;
+    lightboxImg.src = '';
+    lightboxImg.style.filter = '';
+  }, { once: true });
+  document.removeEventListener('keydown', onLightboxKey);
+}
+
+function onLightboxKey(e) { if (e.key === 'Escape') closeLightbox(); }
+
+if (photoFigure) {
+  photoFigure.addEventListener('click', e => {
+    if (magnifierActive) return;
+    if (e.target.closest('.divider-handle') || e.target.closest('.mag-lens') || e.target.closest('.custom-upload-prompt')) return;
+    openLightbox();
+  });
+}
+
+if (lightboxEl) {
+  lightboxEl.addEventListener('click', e => {
+    if (!e.target.closest('.lightbox-img')) closeLightbox();
+  });
+  lightboxEl.querySelector('.lightbox-close')?.addEventListener('click', closeLightbox);
+
+  // Swipe down to close
+  let lbStartY = 0;
+  lightboxEl.addEventListener('touchstart', e => { lbStartY = e.touches[0].clientY; }, { passive: true });
+  lightboxEl.addEventListener('touchend', e => {
+    if (e.changedTouches[0].clientY - lbStartY > 80) closeLightbox();
+  }, { passive: true });
+}
+
+// ── Delight helpers ───────────────────────────────────────────────────────
+
+// 3. Param value snap: brief scale overshoot when value text changes
+function snapParamValue(valueEl) {
+  if (!valueEl) return;
+  valueEl.classList.remove('is-snapping');
+  void valueEl.offsetWidth;
+  valueEl.classList.add('is-snapping');
+  valueEl.addEventListener('animationend', () => valueEl.classList.remove('is-snapping'), { once: true });
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────
