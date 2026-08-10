@@ -11,10 +11,10 @@ import { initMagnifier, setMagnifierEnabled } from './components/zoomLens.js';
 
 // ── State ──────────────────────────────────────────────────────────────────
 const PHOTOS = {
-  landscape:    'assets/photos/stock-landscape.jpg',
-  architecture: 'assets/photos/stock-wildlife.jpg',
-  color:        'assets/photos/stock-color.jpg',
-  people:       'assets/photos/stock-people.jpg',
+  landscape:    `assets/photos/stock-landscape.webp`,
+  architecture: `assets/photos/stock-wildlife.webp`,
+  color:        `assets/photos/stock-color.webp`,
+  people:       `assets/photos/stock-people.webp`,
 };
 
 const state = {
@@ -143,7 +143,7 @@ function filmSimHTML() {
 
   parts.push(`<div class="film-sim-section-label" role="presentation">Color</div>`);
   colorSims.forEach(sim => parts.push(renderCard(sim)));
-  parts.push(`<div class="film-sim-section-label" role="presentation">Black &amp; White</div>`);
+  parts.push(`<div class="film-sim-section-label" role="presentation">Monochrome</div>`);
   bwSims.forEach(sim => parts.push(renderCard(sim)));
 
   return parts.join('');
@@ -886,9 +886,13 @@ function openLightbox() {
   if (!lightboxEl || !lightboxImg) return;
   if (!photoAfter.src || photoAfter.style.display === 'none') return;
   lightboxImg.src = photoAfter.src;
+  lightboxImg.alt = photoAfter.alt || 'Photo with recipe applied';
   lightboxImg.style.filter = photoAfter.style.filter;
   lightboxEl.removeAttribute('hidden');
-  requestAnimationFrame(() => requestAnimationFrame(() => lightboxEl.classList.add('is-open')));
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    lightboxEl.classList.add('is-open');
+    lightboxEl.querySelector('.lightbox-close')?.focus();
+  }));
   document.addEventListener('keydown', onLightboxKey);
 }
 
@@ -898,9 +902,11 @@ function closeLightbox() {
   lightboxEl.addEventListener('transitionend', () => {
     lightboxEl.hidden = true;
     lightboxImg.src = '';
+    lightboxImg.alt = '';
     lightboxImg.style.filter = '';
   }, { once: true });
   document.removeEventListener('keydown', onLightboxKey);
+  photoFigure?.focus();
 }
 
 function onLightboxKey(e) { if (e.key === 'Escape') closeLightbox(); }

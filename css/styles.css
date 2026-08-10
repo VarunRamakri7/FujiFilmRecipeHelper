@@ -4,6 +4,13 @@ img { display: block; max-width: 100%; }
 button { cursor: pointer; border: none; background: none; font: inherit; }
 input[type="range"] { cursor: pointer; }
 
+/* ─── Focus ──────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--fuji-orange);
+  outline-offset: 2px;
+}
+:focus:not(:focus-visible) { outline: none; }
+
 /* ─── Base ───────────────────────────────────────────────── */
 html { height: 100%; }
 body {
@@ -85,7 +92,7 @@ body {
 }
 .btn-primary {
   background: var(--fuji-orange);
-  color: #fff;
+  color: var(--btn-primary-text);
   border: 1px solid transparent;
   font-weight: 600;
 }
@@ -149,7 +156,7 @@ body {
   font-family: var(--font-display);
   font-size: 13px;
   letter-spacing: 0.15em;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   text-transform: uppercase;
 }
 
@@ -181,7 +188,7 @@ body {
   font-size: 9px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   padding: var(--sp-2) var(--sp-3) var(--sp-1);
   border-top: 1px solid var(--border-subtle);
   background: var(--filmstrip-bg);
@@ -249,7 +256,7 @@ body {
   font-size: 9px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   padding: var(--sp-2) var(--sp-4) var(--sp-1);
   border-top: 1px solid var(--border-subtle);
   background: var(--surface-1);
@@ -330,6 +337,15 @@ body {
   outline: none;
   accent-color: var(--fuji-orange);
 }
+.param-slider:focus { outline: none; }
+.param-slider:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--fuji-orange);
+  outline-offset: 3px;
+}
+.param-slider:focus-visible::-moz-range-thumb {
+  outline: 2px solid var(--fuji-orange);
+  outline-offset: 3px;
+}
 .param-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
@@ -376,14 +392,14 @@ body {
   font-size: 12px;
   color: var(--text-secondary);
   background: var(--surface-1);
-  transition: all var(--t-fast);
+  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
   text-align: center;
 }
 .param-option:hover { border-color: var(--fuji-silver); color: var(--text-primary); }
 .param-option.is-active {
   background: var(--fuji-orange);
   border-color: var(--fuji-orange);
-  color: #fff;
+  color: var(--btn-primary-text);
   font-weight: 600;
 }
 
@@ -409,7 +425,7 @@ body {
   letter-spacing: 0.04em;
   color: var(--text-muted);
   border-right: 1px solid var(--border-subtle);
-  transition: all var(--t-fast);
+  transition: background var(--t-fast), color var(--t-fast);
   text-align: center;
 }
 .photo-type-btn:last-child { border-right: none; }
@@ -461,6 +477,7 @@ body {
   background: var(--preview-bg);
   transition: background var(--t-theme);
 }
+.photo-figure:focus { outline: none; }
 .photo-img {
   position: absolute;
   object-fit: contain;
@@ -772,6 +789,11 @@ body {
   width: max-content;
 }
 
+body.sensor-modal-open .mobile-nav {
+  pointer-events: none;
+  opacity: 0;
+}
+
 .mobile-nav-divider {
   width: 1px;
   height: 24px;
@@ -983,7 +1005,7 @@ body {
   border-radius: var(--r-md);
   padding: var(--sp-3) var(--sp-4);
   text-align: left;
-  transition: all var(--t-fast);
+  transition: background var(--t-fast), border-color var(--t-fast);
   display: flex;
   flex-direction: column;
   gap: var(--sp-1);
@@ -1167,7 +1189,7 @@ body {
 .panel-badge {
   margin-left: auto;
   background: var(--fuji-orange);
-  color: #fff;
+  color: var(--btn-primary-text);
   font-size: 10px;
   font-weight: 700;
   font-family: var(--font-mono);
@@ -1349,9 +1371,9 @@ body {
 .recipe-action-btn--load {
   background: var(--fuji-orange);
   border-color: var(--fuji-orange);
-  color: #fff;
+  color: var(--btn-primary-text);
 }
-.recipe-action-btn--load:hover { background: var(--fuji-orange-lt); border-color: var(--fuji-orange-lt); color: #fff; }
+.recipe-action-btn--load:hover { background: var(--fuji-orange-lt); border-color: var(--fuji-orange-lt); color: var(--btn-primary-text); }
 .recipes-empty {
   display: flex;
   flex-direction: column;
@@ -1521,4 +1543,6 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .param-value.is-snapping { animation: none; }
   .photo-after { transition: none; }
+  .film-sim-card.gated-flash,
+  .param-row.gated-flash { animation: none; }
 }
