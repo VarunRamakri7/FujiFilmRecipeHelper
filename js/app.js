@@ -10,11 +10,17 @@ import { saveRecipe, loadRecipes, deleteRecipe, exportRecipe } from './utils/rec
 import { initMagnifier, setMagnifierEnabled } from './components/zoomLens.js';
 
 // ── State ──────────────────────────────────────────────────────────────────
+const WEBP_SUPPORTED = (() => {
+  const c = document.createElement('canvas');
+  return c.toDataURL('image/webp').startsWith('data:image/webp');
+})();
+const ext = WEBP_SUPPORTED ? 'webp' : 'jpg';
+
 const PHOTOS = {
-  landscape:    'assets/photos/stock-landscape.jpg',
-  architecture: 'assets/photos/stock-wildlife.jpg',
-  color:        'assets/photos/stock-color.jpg',
-  people:       'assets/photos/stock-people.jpg',
+  landscape:    `assets/photos/stock-landscape.${ext}`,
+  architecture: `assets/photos/stock-wildlife.${ext}`,
+  color:        `assets/photos/stock-color.${ext}`,
+  people:       `assets/photos/stock-people.${ext}`,
 };
 
 const state = {
@@ -886,9 +892,13 @@ function openLightbox() {
   if (!lightboxEl || !lightboxImg) return;
   if (!photoAfter.src || photoAfter.style.display === 'none') return;
   lightboxImg.src = photoAfter.src;
+  lightboxImg.alt = photoAfter.alt || 'Photo with recipe applied';
   lightboxImg.style.filter = photoAfter.style.filter;
   lightboxEl.removeAttribute('hidden');
-  requestAnimationFrame(() => requestAnimationFrame(() => lightboxEl.classList.add('is-open')));
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    lightboxEl.classList.add('is-open');
+    lightboxEl.querySelector('.lightbox-close')?.focus();
+  }));
   document.addEventListener('keydown', onLightboxKey);
 }
 
@@ -898,9 +908,11 @@ function closeLightbox() {
   lightboxEl.addEventListener('transitionend', () => {
     lightboxEl.hidden = true;
     lightboxImg.src = '';
+    lightboxImg.alt = '';
     lightboxImg.style.filter = '';
   }, { once: true });
   document.removeEventListener('keydown', onLightboxKey);
+  photoFigure?.focus();
 }
 
 function onLightboxKey(e) { if (e.key === 'Escape') closeLightbox(); }
